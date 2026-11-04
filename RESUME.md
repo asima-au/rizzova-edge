@@ -1,6 +1,6 @@
 # Rizzova Edge – where we are (handover for a new session)
 
-Updated 27 Oct 2026. Start a new session with: "Read RESUME.md in cursor86/rizzova-edge and continue."
+Updated 4 Nov 2026. Start a new session with: "Read RESUME.md in cursor86/rizzova-edge and continue."
 
 ## ⭐ Start here (next session)
 **Status:** shop, backend, AliExpress and Stripe (test mode) all work end to end.
@@ -63,6 +63,16 @@ Env for wrangler: `CLOUDFLARE_API_TOKEN=proxy-injected CLOUDFLARE_ACCOUNT_ID=bee
   `aliexpress.trade.ds.order.get`, `aliexpress.ds.order.tracking.get`.
   - TODO: switch tracking to `order.tracking.get` and add the feed import, after checking the field names
     with the console's API test tool.
+
+## Nightly product discovery (deployed 4 Nov 2026)
+- Cron `0 13 * * *` (midnight Sydney) pulls `DISCOVERY_FEEDS` with `ds.feed.itemids.get`, stores new ids in D1 `ae_candidates`,
+  and queues a `vet-candidate` job each. The job checks rating and store ratings >= 4.8, orders >= 100, and supplier delivery
+  <= A$3 to AU, US and AE (`ds.freight.query`). Passing products are imported (up to 10 per 24 h) while `AUTO_IMPORT = "on"`.
+  The cron slot is shared with tracking because the free plan allows 5 crons per account (all 5 are in use).
+- Settings are `DISCOVERY_*` and `AUTO_IMPORT` in `wrangler.toml`. Set `AUTO_IMPORT = "off"` to review first.
+- Review: `GET /admin/candidates?status=imported|passed|rejected`; import by hand: `POST /admin/candidates/approve {"ids": [...]|"all"}`.
+- The feed, rating and freight field names are not confirmed yet, so every check fails closed. After the first run, check
+  `?status=rejected`: if every reason is "no rating" or "no delivery to …", fix the field names in `src/ingest/discover.ts`.
 
 ## To do (in order)
 1. Connect AliExpress (above), then import 3–5 test products via `POST /admin/import` and check prices, photos and variants.

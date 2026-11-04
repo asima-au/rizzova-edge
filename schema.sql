@@ -97,6 +97,21 @@ CREATE TABLE IF NOT EXISTS import_queue (
   last_error            TEXT
 );
 
+-- Nightly discovery (src/ingest/discover.ts): feed products and their vetting result.
+CREATE TABLE IF NOT EXISTS ae_candidates (
+  aliexpress_product_id TEXT PRIMARY KEY,
+  feed                  TEXT,
+  status                TEXT NOT NULL DEFAULT 'new'
+                        CHECK (status IN ('new','passed','rejected','imported')),
+  rating                REAL,
+  orders                INTEGER,
+  shipping_json         TEXT,                        -- {"AU": cents, "US": cents, "AE": cents}
+  reason                TEXT,                        -- why it was rejected
+  found_at              INTEGER NOT NULL,
+  updated_at            INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_ae_candidates_status ON ae_candidates(status, updated_at);
+
 -- ───────────────────────── Orders ─────────────────────────
 CREATE TABLE IF NOT EXISTS orders (
   id                      TEXT PRIMARY KEY,          -- uuid

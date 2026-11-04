@@ -33,6 +33,37 @@ admin.post("/import", async (c) => {
   return c.json({ queued: ids.length });
 });
 
+/** Discovery results: GET /admin/candidates?status=passed|rejected|imported|new */
+admin.get("/candidates", async (c) => {
+  const status = c.req.query("status");
+  const stmt = status
+    ? c.env.DB.prepare(`SELECT * FROM ae_candidates WHERE status = ? ORDER BY updated_at DESC LIMIT 200`).bind(status)
+    : c.env.DB.prepare(`SELECT * FROM ae_candidates ORDER BY updated_at DESC LIMIT 200`);
+  const { results } = await stmt.all();
+  return c.json({ count: results.length, candidates: results });
+});
+
+/** Import vetted candidates by hand (used when AUTO_IMPORT is off): { "ids": [...] } or { "ids": "all" } */
+admin.post("/candidates/approve", async (c) => {
+  const body = await c.req.json<{ ids?: unknown }>().catch(() => ({ ids: undefined }));
+  const { results } = body.ids === "all"
+    ? await c.env.DB.prepare(`SELECT aliexpress_product_id AS id FROM ae_candidates WHERE status = 'passed'`).all<{ id: string }>()
+    : { results: (Array.isArray(body.ids) ? body.ids : []).map((id) => ({ id: String(id) })) };
+  const ids = results.map((r) => r.id).filter((s) => /^\d{6,20}$/.test(s));
+  if (ids.length === 0) return c.json({ error: 'Send { "ids": [...] } or { "ids": "all" }' }, 400);
+  const t = now();
+  for (const id of ids) {
+    await c.env.DB.batch([
+      c.env.DB.prepare(`INSERT OR IGNORE INTO import_queue (aliexpress_product_id, requested_at) VALUES (?, ?)`).bind(id, t),
+      c.env.DB.prepare(`UPDATE ae_candidates SET status = 'imported', updated_at = ? WHERE aliexpress_product_id = ?`).bind(t, id),
+    ]);
+  }
+  for (let i = 0; i < ids.length; i += 100) {
+    await c.env.JOBS.sendBatch(ids.slice(i, i + 100).map((id) => ({ body: { type: "ingest-product" as const, aeProductId: id } })));
+  }
+  return c.json({ queued: ids.length });
+});
+
 admin.get("/stats", async (c) => {
   const r = await c.env.DB.batch([
     c.env.DB.prepare(`SELECT status, COUNT(*) AS n FROM products GROUP BY status`),

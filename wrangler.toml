@@ -22,6 +22,15 @@ PUBLIC_SITE_URL = "https://rizzova-storefront.rizzdigital.workers.dev"
 CF_IMAGES_ACCOUNT_HASH = ""   # empty = no Cloudflare Images; product photos are served from the supplier CDN
 CHECKOUT_COUNTRIES = "AU,US,AE"
 AUTO_FULFIL = "off"            # "on" = paid live orders are placed on AliExpress automatically
+# Nightly discovery (src/ingest/discover.ts): promo feeds -> vetting -> import.
+DISCOVERY_FEEDS = "DS_ThanksgivingDayEssentials,DS_Winter-must-haves"
+DISCOVERY_PER_FEED = "50"
+DISCOVERY_MIN_RATING = "4.8"     # product and store ratings
+DISCOVERY_MIN_ORDERS = "100"
+DISCOVERY_MAX_SHIP_CENTS = "300" # supplier delivery per country, store currency (owner rule: about $3)
+DISCOVERY_COUNTRIES = "AU,US,AE"
+DISCOVERY_DAILY_LIMIT = "10"     # most products auto-imported per 24 hours
+AUTO_IMPORT = "on"               # "off" = vetted products wait for POST /admin/candidates/approve
 
 # Secrets (set with `wrangler secret put NAME`, never in this file):
 #   AE_APP_KEY, AE_APP_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
@@ -51,7 +60,7 @@ dead_letter_queue = "rizzova-jobs-dlq"
 crons = [
   "*/15 * * * *",   # token health: refresh before expiry
   "0 */6 * * *",    # catalogue sync: re-pull the stalest products + drain import_queue
-  "30 2 * * *"      # logistics: poll tracking for open fulfilments
+  "0 13 * * *"      # midnight Sydney: product discovery from promo feeds + poll tracking for open fulfilments
 ]
 
 # ───────────── Staging environment (separate data) ─────────────
@@ -61,4 +70,4 @@ vars = { AE_GATEWAY = "https://api-sg.aliexpress.com", AE_SHIP_TO_COUNTRY = "AU"
 d1_databases = [{ binding = "DB", database_name = "rizzova-db-staging", database_id = "REPLACE_ME" }]
 kv_namespaces = [{ binding = "KV", id = "REPLACE_ME" }]
 queues = { producers = [{ binding = "JOBS", queue = "rizzova-jobs-staging" }], consumers = [{ queue = "rizzova-jobs-staging", max_batch_size = 10, max_retries = 5, dead_letter_queue = "rizzova-jobs-staging-dlq" }] }
-triggers = { crons = ["*/15 * * * *", "0 */6 * * *", "30 2 * * *"] }
+triggers = { crons = ["*/15 * * * *", "0 */6 * * *", "0 13 * * *"] }

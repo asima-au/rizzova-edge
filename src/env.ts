@@ -15,6 +15,14 @@ export interface Env {
   CF_IMAGES_ACCOUNT_HASH: string;
   CHECKOUT_COUNTRIES: string;
   AUTO_FULFIL: string;
+  DISCOVERY_FEEDS: string;
+  DISCOVERY_PER_FEED: string;
+  DISCOVERY_MIN_RATING: string;
+  DISCOVERY_MIN_ORDERS: string;
+  DISCOVERY_MAX_SHIP_CENTS: string;
+  DISCOVERY_COUNTRIES: string;
+  DISCOVERY_DAILY_LIMIT: string;
+  AUTO_IMPORT: string;
 
   // Secrets
   AE_APP_KEY: string;

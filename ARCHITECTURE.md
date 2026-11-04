@@ -35,7 +35,7 @@ flowchart LR
   W -- store tokens --> D1 & KV
   CRON -- "*/15: refresh token" --> W
   CRON -- "0 */6: stalest products + import_queue" --> Q
-  CRON -- "30 2: open fulfilments" --> Q
+  CRON -- "0 13: discovery + open fulfilments" --> Q
   W -- ingest-product jobs --> Q
   Q -- consumer --> W
   W -- "aliexpress.ds.product.get" --> AE
