@@ -3,6 +3,7 @@ import type { Env } from "../env";
 import { safeEqual, now } from "../lib/util";
 import { callSystem, callBusiness, AliExpressError } from "../aliexpress/client";
 import { getAccessToken } from "../aliexpress/auth";
+import { discoverFromFeeds } from "../ingest/discover";
 
 export const requireAdmin: MiddlewareHandler<{ Bindings: Env }> = async (c, next) => {
   const header = c.req.header("authorization") ?? "";
@@ -31,6 +32,16 @@ admin.post("/import", async (c) => {
     await c.env.JOBS.sendBatch(ids.slice(i, i + 100).map((id) => ({ body: { type: "ingest-product" as const, aeProductId: id } })));
   }
   return c.json({ queued: ids.length });
+});
+
+/** Run the nightly discovery now. GET so the owner can open it in a browser; vetting then runs on the queue. */
+admin.get("/discovery/run", async (c) => {
+  try {
+    const r = await discoverFromFeeds(c.env, await getAccessToken(c.env));
+    return c.json({ ...r, next: "Vetting runs in the background. Check /admin/candidates in a few minutes." });
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 502);
+  }
 });
 
 /** Discovery results: GET /admin/candidates?status=passed|rejected|imported|new */

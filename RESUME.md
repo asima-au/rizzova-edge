@@ -70,6 +70,7 @@ Env for wrangler: `CLOUDFLARE_API_TOKEN=proxy-injected CLOUDFLARE_ACCOUNT_ID=bee
   <= A$3 to AU, US and AE (`ds.freight.query`). Passing products are imported (up to 10 per 24 h) while `AUTO_IMPORT = "on"`.
   The cron slot is shared with tracking because the free plan allows 5 crons per account (all 5 are in use).
 - Settings are `DISCOVERY_*` and `AUTO_IMPORT` in `wrangler.toml`. Set `AUTO_IMPORT = "off"` to review first.
+- Run it now: `GET /admin/discovery/run` (works in a browser with `?admin_token=`).
 - Review: `GET /admin/candidates?status=imported|passed|rejected`; import by hand: `POST /admin/candidates/approve {"ids": [...]|"all"}`.
 - The feed, rating and freight field names are not confirmed yet, so every check fails closed. After the first run, check
   `?status=rejected`: if every reason is "no rating" or "no delivery to …", fix the field names in `src/ingest/discover.ts`.
