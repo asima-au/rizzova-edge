@@ -1,13 +1,17 @@
 import { Hono, type MiddlewareHandler } from "hono";
+import { getCookie } from "hono/cookie";
 import type { Env } from "../env";
 import { safeEqual, now } from "../lib/util";
 import { callSystem, callBusiness, AliExpressError } from "../aliexpress/client";
 import { getAccessToken } from "../aliexpress/auth";
 import { discoverFromFeeds } from "../ingest/discover";
 
+/** Set by the owner console (/console) so admin links work without the password in the URL. */
+export const ADMIN_COOKIE = "rz_admin";
+
 export const requireAdmin: MiddlewareHandler<{ Bindings: Env }> = async (c, next) => {
   const header = c.req.header("authorization") ?? "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : c.req.query("admin_token") ?? "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : c.req.query("admin_token") ?? getCookie(c, ADMIN_COOKIE) ?? "";
   if (!c.env.ADMIN_TOKEN || !token || !safeEqual(token, c.env.ADMIN_TOKEN)) return c.json({ error: "Unauthorised" }, 401);
   await next();
 };

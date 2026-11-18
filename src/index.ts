@@ -9,6 +9,7 @@ import { products } from "./routes/products";
 import { cart } from "./routes/cart";
 import { checkout } from "./routes/checkout";
 import { stripeWebhook } from "./routes/stripe";
+import { consoleApp } from "./routes/console";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -16,6 +17,7 @@ app.use("/api/*", async (c, next) => cors({ origin: c.env.PUBLIC_SITE_URL, crede
 app.get("/", (c) => c.json({ service: "rizzova-edge", ok: true }));
 app.route("/oauth", oauth);
 app.route("/admin", admin);
+app.route("/console", consoleApp);
 app.route("/api/products", products);
 app.route("/api/cart", cart);
 app.route("/api/checkout", checkout);
