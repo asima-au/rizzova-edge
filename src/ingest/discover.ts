@@ -103,7 +103,9 @@ async function cheapestShippingCents(env: Env, token: string, aeProductId: strin
   for (const o of options) {
     if (!o || typeof o !== "object") continue;
     const free = o.free_shipping === true || String(o.free_shipping) === "true";
-    const cents = free ? 0 : num(o.shipping_fee_cent) ?? (num(o.shipping_fee) !== null ? Math.round(num(o.shipping_fee)! * 100) : null);
+    // Despite its name, shipping_fee_cent holds the amount in currency units ("12.60" = A$12.60), as seen on 18 Nov 2026.
+    const amount = num(o.shipping_fee_cent) ?? num(o.shipping_fee);
+    const cents = free ? 0 : amount === null ? null : Math.round(amount * 100);
     if (cents !== null && (best === null || cents < best)) best = cents;
   }
   return best;
