@@ -10,7 +10,7 @@ import { now } from "../lib/util";
  * by title and accept the candidate whose SKUs share most of those values. Unsure matches are
  * left unmatched rather than guessed.
  */
-const MAX_CANDIDATES = 3;   // up to 3 searches + 3 product.get calls per job; batches of 5 stay under the free-plan subrequest limit
+const MAX_CANDIDATES = 6;   // up to 3 searches + 6 product.get calls per job; queue batches of 3 stay under the free-plan subrequest limit
 const MIN_OVERLAP = 0.5;    // share of the old product's option codes the AliExpress listing must have
 
 /** Option codes on an AliExpress listing, split from each SKU's sku_attr ("14:173#Blue;5:100014064"). */
