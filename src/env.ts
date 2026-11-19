@@ -4,6 +4,8 @@ export interface Env {
   DB: D1Database;
   KV: KVNamespace;
   JOBS: Queue<Job>;
+  /** Cloudflare Email Routing send binding for owner alerts (src/lib/alert.ts). */
+  ALERT_EMAIL?: SendEmail;
 
   AE_GATEWAY: string;
   AE_SHIP_TO_COUNTRY: string;
@@ -33,4 +35,6 @@ export interface Env {
   CF_ACCOUNT_ID: string;
   CF_IMAGES_API_TOKEN: string;
   ADMIN_TOKEN: string;
+  /** Owner alert address: a verified Email Routing destination. */
+  ALERT_TO?: string;
 }

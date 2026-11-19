@@ -3,6 +3,7 @@ import { setCookie } from "hono/cookie";
 import type { Env } from "../env";
 import { now, safeEqual } from "../lib/util";
 import { requireAdmin, ADMIN_COOKIE } from "./admin";
+import { alertOwner } from "../lib/alert";
 
 /** Owner console: sign in once with the admin password, then use buttons instead of hand-edited links. */
 export const consoleApp = new Hono<{ Bindings: Env }>();
@@ -36,6 +37,7 @@ consoleApp.get("/home", requireAdmin, (c) => c.html(page(`<h1>Rizzova admin</h1>
 <a class="b" href="/admin/discovery/run">3. Import products now</a>
 <a class="b" href="/admin/candidates">4. See import results</a>
 <a class="b" href="/console/dashboard" style="background:#c9a14a;color:#241534">Master dashboard</a>
+<form method="post" action="/console/test-alert"><button type="submit">Send me a test alert email</button></form>
 <a class="b" href="/console/suggestions">New product suggestions (approve before they go live)</a>
 <a class="b" href="/console/titles">Review new product titles (Rizz AI)</a>
 <a class="b" href="/admin/stripe/status">Check Stripe payments (test or live)</a>
@@ -178,4 +180,10 @@ consoleApp.post("/suggestions", requireAdmin, async (c) => {
   if (add.length) await c.env.JOBS.sendBatch(add.map((id) => ({ body: { type: "ingest-product" as const, aeProductId: id } })));
   return c.html(page(`<h1>Saved</h1><p>${add.length} product${add.length === 1 ? "" : "s"} being added; they appear on the store within a few minutes.</p>
 <a class="b" href="/console/suggestions">Back to suggestions</a><a class="b" href="/console/home">Home</a>`));
+});
+
+consoleApp.post("/test-alert", requireAdmin, async (c) => {
+  if (!c.env.ALERT_EMAIL || !c.env.ALERT_TO) return c.html(page(`<h1>Alerts not set up</h1><p>The alert email address is missing.</p><a class="b" href="/console/home">Back</a>`));
+  await alertOwner(c.env, "Rizzova test alert", "This is a test. Urgent store alerts (new paid orders, failed supplier orders) will arrive like this.\n\nMaster dashboard: https://rizzova-edge.rizzdigital.workers.dev/console/dashboard\n");
+  return c.html(page(`<h1>Test alert sent</h1><p>Check your inbox (and spam folder) for "Rizzova test alert" from alerts@rizzova.com.</p><a class="b" href="/console/home">Back</a>`));
 });

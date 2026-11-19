@@ -37,6 +37,11 @@ AUTO_IMPORT = "off"              # owner approves suggestions at /console/sugges
 #   AE_APP_KEY, AE_APP_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
 #   CF_ACCOUNT_ID, CF_IMAGES_API_TOKEN, ADMIN_TOKEN
 
+# Owner alerts by email through Cloudflare Email Routing (free). The recipient is the ALERT_TO secret,
+# which must be a verified destination address in rizzova.com's Email Routing.
+[[send_email]]
+name = "ALERT_EMAIL"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "rizzova-db"

@@ -5,6 +5,7 @@ import { getDsOrder, placeDsOrder } from "./aliexpress/dropshipper";
 import { now } from "./lib/util";
 import { discoverFromFeeds, vetCandidate } from "./ingest/discover";
 import { matchLegacy } from "./ingest/legacy";
+import { alertOwner } from "./lib/alert";
 
 export type Job =
   | { type: "ingest-product"; aeProductId: string }
@@ -35,6 +36,7 @@ export async function handleQueue(batch: MessageBatch<Job>, env: Env): Promise<v
       if (job.type === "ingest-product") await recordSyncError(env, job.aeProductId, message);
       if (job.type === "fulfil-order" && msg.attempts >= 5) {
         await env.DB.prepare(`UPDATE orders SET status = 'fulfilment_failed', updated_at = ? WHERE id = ?`).bind(now(), job.orderId).run();
+        await alertOwner(env, "Supplier order failed: place it by hand", `Automatic AliExpress ordering failed 5 times (${message.slice(0, 300)}).\n\nOpen the master dashboard and place the order on AliExpress by hand:\nhttps://rizzova-edge.rizzdigital.workers.dev/console/dashboard\n`);
       }
       // Exponential backoff: 30s, 60s, 120s, ... (Queues sends to the DLQ after max_retries).
       msg.retry({ delaySeconds: Math.min(30 * 2 ** (msg.attempts - 1), 3600) });
