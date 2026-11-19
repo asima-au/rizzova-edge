@@ -3,7 +3,7 @@ import { getAccessToken, refreshToken, REFRESH_WINDOW_MS, tokenHealth } from "./
 import { ingestProduct, recordSyncError } from "./ingest/product";
 import { getDsOrder, placeDsOrder } from "./aliexpress/dropshipper";
 import { now } from "./lib/util";
-import { discoverFromFeeds, vetCandidate } from "./ingest/discover";
+import { discoverFromFeeds, discoverFromSearch, discoveryKeywords, vetCandidate } from "./ingest/discover";
 import { matchLegacy } from "./ingest/legacy";
 import { alertOwner } from "./lib/alert";
 
@@ -13,7 +13,8 @@ export type Job =
   | { type: "track-fulfilment"; fulfilmentId: number }
   | { type: "vet-candidate"; aeProductId: string }
   | { type: "match-legacy"; wcId: number }
-  | { type: "run-discovery" };
+  | { type: "run-discovery" }
+  | { type: "search-discovery"; keyword: string };
 
 const SYNC_BATCH = 200;
 
@@ -31,6 +32,7 @@ export async function handleQueue(batch: MessageBatch<Job>, env: Env): Promise<v
       else if (job.type === "vet-candidate") await vetCandidate(env, await getToken(), job.aeProductId);
       else if (job.type === "match-legacy") await matchLegacy(env, await getToken(), job.wcId);
       else if (job.type === "run-discovery") console.log("discovery", JSON.stringify(await discoverFromFeeds(env, await getToken())));
+      else if (job.type === "search-discovery") console.log("search", job.keyword, JSON.stringify(await discoverFromSearch(env, await getToken(), job.keyword)));
       msg.ack();
     } catch (err) {
       const message = (err as Error).message;
@@ -128,6 +130,9 @@ export async function handleCron(controller: ScheduledController, env: Env): Pro
         return null;
       });
       if (r) console.log(`discovery: ${r.found} feed items, ${r.queued} new candidates queued for vetting`);
+      // Best-seller keyword searches, one job each so every search gets its own call budget.
+      const keywords = discoveryKeywords(env);
+      if (keywords.length) await env.JOBS.sendBatch(keywords.map((keyword) => ({ body: { type: "search-discovery" as const, keyword } })));
       const { results } = await env.DB.prepare(`SELECT id FROM fulfillments WHERE status IN ('placed','shipped') LIMIT 500`).all<{ id: number }>();
       for (let i = 0; i < results.length; i += 100) {
         await env.JOBS.sendBatch(results.slice(i, i + 100).map((r) => ({ body: { type: "track-fulfilment" as const, fulfilmentId: r.id } })));

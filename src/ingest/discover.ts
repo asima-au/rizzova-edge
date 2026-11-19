@@ -98,6 +98,41 @@ export async function discoverFromFeeds(env: Env, token: string): Promise<{ foun
   return { found, queued: fresh.length };
 }
 
+/**
+ * Best sellers for one keyword: aliexpress.ds.text.search sorted by orders, two pages of 50.
+ * New product ids go into ae_candidates (feed "search: <keyword>") and are vetted like feed products.
+ */
+export async function discoverFromSearch(env: Env, token: string, keyword: string): Promise<{ found: number; queued: number }> {
+  const t = now();
+  const ids: string[] = [];
+  for (const pageIndex of [1, 2]) {
+    const payload = await callBusiness(env, "aliexpress.ds.text.search", token, {
+      keyWord: keyword, local: "en_US", countryCode: env.AE_SHIP_TO_COUNTRY, currency: env.STORE_CURRENCY,
+      sortBy: "orders,desc", pageSize: 50, pageIndex,
+    });
+    const page = feedProductIds(payload);
+    ids.push(...page.filter((id) => !ids.includes(id)));
+    if (page.length < 50) break;
+  }
+  const fresh: string[] = [];
+  const feed = `search: ${keyword}`.slice(0, 80);
+  for (let i = 0; i < ids.length; i += 50) {
+    const res = await env.DB.batch(
+      ids.slice(i, i + 50).map((id) =>
+        env.DB.prepare(`INSERT OR IGNORE INTO ae_candidates (aliexpress_product_id, feed, status, found_at, updated_at) VALUES (?, ?, 'new', ?, ?)`).bind(id, feed, t, t),
+      ),
+    );
+    res.forEach((r, j) => { if (r.meta.changes > 0) fresh.push(ids[i + j]!); });
+  }
+  for (let i = 0; i < fresh.length; i += 100) {
+    await env.JOBS.sendBatch(fresh.slice(i, i + 100).map((id) => ({ body: { type: "vet-candidate" as const, aeProductId: id } })));
+  }
+  return { found: ids.length, queued: fresh.length };
+}
+
+/** Keywords searched every night (DISCOVERY_KEYWORDS), one queued job each. */
+export const discoveryKeywords = (env: Env) => (env.DISCOVERY_KEYWORDS ?? "").split(",").map((k) => k.trim()).filter(Boolean);
+
 /** Cheapest delivery to one country, in store-currency cents; null when not deliverable or unreadable. */
 async function cheapestShippingCents(env: Env, token: string, aeProductId: string, skuId: string | undefined, country: string): Promise<number | null> {
   const payload = await callBusiness(env, "aliexpress.ds.freight.query", token, {

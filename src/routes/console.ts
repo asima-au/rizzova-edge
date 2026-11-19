@@ -156,6 +156,8 @@ consoleApp.get("/suggestions", requireAdmin, async (c) => {
 &nbsp; <label><input type="radio" name="do_${r.id}" value="later" checked style="width:auto"> Later</label></p></li>`).join("");
   return c.html(page(`<h1>Product suggestions</h1>
 <p>These passed the checks (4.7★+, low delivery cost, under A$${(Number(c.env.DISCOVERY_MAX_PRICE_CENTS) || 6000) / 100}, no risky types). Nothing goes live until you add it.</p>
+<form method="post" action="/console/search"><p><b>Find best sellers:</b> keywords separated by commas. The top 100 by orders for each are checked against your rules and appear here.</p>
+<input name="keywords" placeholder="christmas gift, pet bed, kids puzzle" required><button type="submit">Search AliExpress</button></form>
 ${results.length ? `<form method="post"><ul style="padding:0;list-style:none">${rows}</ul><button type="submit">Save</button></form>` : "<p>No suggestions waiting.</p>"}
 <a class="b" href="/console/home">Back</a>`));
 });
@@ -186,4 +188,14 @@ consoleApp.post("/test-alert", requireAdmin, async (c) => {
   if (!c.env.ALERT_EMAIL || !c.env.ALERT_TO) return c.html(page(`<h1>Alerts not set up</h1><p>The alert email address is missing.</p><a class="b" href="/console/home">Back</a>`));
   await alertOwner(c.env, "Rizzova test alert", "This is a test. Urgent store alerts (new paid orders, failed supplier orders) will arrive like this.\n\nMaster dashboard: https://rizzova-edge.rizzdigital.workers.dev/console/dashboard\n");
   return c.html(page(`<h1>Test alert sent</h1><p>Check your inbox (and spam folder) for "Rizzova test alert" from alerts@rizzova.com.</p><a class="b" href="/console/home">Back</a>`));
+});
+
+/** Queue a best-seller search per keyword; results are vetted and land on /console/suggestions. */
+consoleApp.post("/search", requireAdmin, async (c) => {
+  const form = await c.req.parseBody();
+  const keywords = String(form.keywords ?? "").split(",").map((k) => k.trim().slice(0, 60)).filter(Boolean).slice(0, 20);
+  if (keywords.length) await c.env.JOBS.sendBatch(keywords.map((keyword) => ({ body: { type: "search-discovery" as const, keyword } })));
+  return c.html(page(`<h1>Searching ${keywords.length} keyword${keywords.length === 1 ? "" : "s"}</h1>
+<p>Checking the top 100 best sellers for each. Products that pass your rules appear under suggestions in about 20–40 minutes.</p>
+<a class="b" href="/console/suggestions">Suggestions</a><a class="b" href="/console/home">Home</a>`));
 });

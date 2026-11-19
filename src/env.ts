@@ -18,6 +18,7 @@ export interface Env {
   CHECKOUT_COUNTRIES: string;
   AUTO_FULFIL: string;
   DISCOVERY_FEEDS: string;
+  DISCOVERY_KEYWORDS: string;
   DISCOVERY_PER_FEED: string;
   DISCOVERY_MIN_RATING: string;
   DISCOVERY_MIN_STORE_RATING: string;
