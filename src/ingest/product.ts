@@ -1,3 +1,4 @@
+import { classifyTitle } from "../lib/classify";
 import type { Env } from "../env";
 import { getDsProduct, list, type DsProduct, type DsSku } from "../aliexpress/dropshipper";
 import { imageIdFor, uploadImageFromUrl } from "./images";
@@ -90,6 +91,9 @@ export async function ingestProduct(env: Env, token: string, aeProductId: string
     ).bind(aeProductId, title, sanitizeHtml(base.detail), slugify(title, aeProductId), live ? "active" : "unavailable", env.STORE_CURRENCY, featureId, run),
   );
 
+  // One department per product; set once so a manual move is never undone by a re-sync.
+  stmts.push(env.DB.prepare(`UPDATE products SET category_id = ? WHERE aliexpress_product_id = ? AND category_id IS NULL`).bind(classifyTitle(title), aeProductId));
+
   for (const v of variants) {
     stmts.push(
       env.DB.prepare(
@@ -144,6 +148,13 @@ export async function ingestProduct(env: Env, token: string, aeProductId: string
     ).bind(aeProductId),
   );
   stmts.push(env.DB.prepare(`DELETE FROM import_queue WHERE aliexpress_product_id = ?`).bind(aeProductId));
+  // Vetted suggestions record which countries the supplier reaches cheaply; NULL means all checkout countries.
+  stmts.push(
+    env.DB.prepare(
+      `UPDATE products SET ship_countries = (SELECT ship_countries FROM ae_candidates WHERE aliexpress_product_id = ?1)
+       WHERE aliexpress_product_id = ?1 AND ship_countries IS NULL`,
+    ).bind(aeProductId),
+  );
 
   await env.DB.batch(stmts); // D1 batches run as a single transaction
   return { variants: variants.length, images: uploaded.size };

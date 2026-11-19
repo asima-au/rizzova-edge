@@ -3,11 +3,12 @@ import { setCookie } from "hono/cookie";
 import type { Env } from "../env";
 import { now, safeEqual } from "../lib/util";
 import { requireAdmin, ADMIN_COOKIE } from "./admin";
+import { alertOwner } from "../lib/alert";
 
 /** Owner console: sign in once with the admin password, then use buttons instead of hand-edited links. */
 export const consoleApp = new Hono<{ Bindings: Env }>();
 
-const page = (body: string) => `<!doctype html><html lang="en"><head><meta charset="utf-8">
+export const page = (body: string) => `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Rizzova admin</title>
 <style>body{font-family:system-ui,sans-serif;max-width:440px;margin:48px auto;padding:0 16px;background:#faf8fc;color:#241534}
 h1{font-size:22px}a.b,button{display:block;width:100%;box-sizing:border-box;margin:10px 0;padding:14px;border:0;border-radius:10px;
@@ -35,6 +36,8 @@ consoleApp.get("/home", requireAdmin, (c) => c.html(page(`<h1>Rizzova admin</h1>
 <a class="b" href="/oauth/aliexpress/health">2. Check the AliExpress connection</a>
 <a class="b" href="/admin/discovery/run">3. Import products now</a>
 <a class="b" href="/admin/candidates">4. See import results</a>
+<a class="b" href="/console/dashboard" style="background:#c9a14a;color:#241534">Master dashboard</a>
+<form method="post" action="/console/test-alert"><button type="submit">Send me a test alert email</button></form>
 <a class="b" href="/console/suggestions">New product suggestions (approve before they go live)</a>
 <a class="b" href="/console/titles">Review new product titles (Rizz AI)</a>
 <a class="b" href="/admin/stripe/status">Check Stripe payments (test or live)</a>
@@ -153,6 +156,8 @@ consoleApp.get("/suggestions", requireAdmin, async (c) => {
 &nbsp; <label><input type="radio" name="do_${r.id}" value="later" checked style="width:auto"> Later</label></p></li>`).join("");
   return c.html(page(`<h1>Product suggestions</h1>
 <p>These passed the checks (4.7★+, low delivery cost, under A$${(Number(c.env.DISCOVERY_MAX_PRICE_CENTS) || 6000) / 100}, no risky types). Nothing goes live until you add it.</p>
+<form method="post" action="/console/search"><p><b>Find best sellers:</b> keywords separated by commas. The top 100 by orders for each are checked against your rules and appear here.</p>
+<input name="keywords" placeholder="christmas gift, pet bed, kids puzzle" required><button type="submit">Search AliExpress</button></form>
 ${results.length ? `<form method="post"><ul style="padding:0;list-style:none">${rows}</ul><button type="submit">Save</button></form>` : "<p>No suggestions waiting.</p>"}
 <a class="b" href="/console/home">Back</a>`));
 });
@@ -177,4 +182,20 @@ consoleApp.post("/suggestions", requireAdmin, async (c) => {
   if (add.length) await c.env.JOBS.sendBatch(add.map((id) => ({ body: { type: "ingest-product" as const, aeProductId: id } })));
   return c.html(page(`<h1>Saved</h1><p>${add.length} product${add.length === 1 ? "" : "s"} being added; they appear on the store within a few minutes.</p>
 <a class="b" href="/console/suggestions">Back to suggestions</a><a class="b" href="/console/home">Home</a>`));
+});
+
+consoleApp.post("/test-alert", requireAdmin, async (c) => {
+  if (!c.env.ALERT_EMAIL || !c.env.ALERT_TO) return c.html(page(`<h1>Alerts not set up</h1><p>The alert email address is missing.</p><a class="b" href="/console/home">Back</a>`));
+  await alertOwner(c.env, "Rizzova test alert", "This is a test. Urgent store alerts (new paid orders, failed supplier orders) will arrive like this.\n\nMaster dashboard: https://rizzova-edge.rizzdigital.workers.dev/console/dashboard\n");
+  return c.html(page(`<h1>Test alert sent</h1><p>Check your inbox (and spam folder) for "Rizzova test alert" from alerts@rizzova.com.</p><a class="b" href="/console/home">Back</a>`));
+});
+
+/** Queue a best-seller search per keyword; results are vetted and land on /console/suggestions. */
+consoleApp.post("/search", requireAdmin, async (c) => {
+  const form = await c.req.parseBody();
+  const keywords = String(form.keywords ?? "").split(",").map((k) => k.trim().slice(0, 60)).filter(Boolean).slice(0, 20);
+  if (keywords.length) await c.env.JOBS.sendBatch(keywords.map((keyword) => ({ body: { type: "search-discovery" as const, keyword } })));
+  return c.html(page(`<h1>Searching ${keywords.length} keyword${keywords.length === 1 ? "" : "s"}</h1>
+<p>Checking the top 100 best sellers for each. Products that pass your rules appear under suggestions in about 20–40 minutes.</p>
+<a class="b" href="/console/suggestions">Suggestions</a><a class="b" href="/console/home">Home</a>`));
 });

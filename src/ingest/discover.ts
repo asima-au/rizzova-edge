@@ -52,6 +52,7 @@ const settings = (env: Env) => ({
   feeds: (env.DISCOVERY_FEEDS ?? "").split(",").map((s) => s.trim()).filter(Boolean),
   perFeed: Math.min(Number(env.DISCOVERY_PER_FEED) || 50, 200),
   minRating: Number(env.DISCOVERY_MIN_RATING) || 4.8,
+  minStoreRating: Number(env.DISCOVERY_MIN_STORE_RATING) || 4.6,
   minOrders: Number(env.DISCOVERY_MIN_ORDERS) || 100,
   maxShipCents: Number(env.DISCOVERY_MAX_SHIP_CENTS) || 300,
   countries: (env.DISCOVERY_COUNTRIES || "AU,US,AE").split(",").map((s) => s.trim()).filter(Boolean),
@@ -97,6 +98,41 @@ export async function discoverFromFeeds(env: Env, token: string): Promise<{ foun
   return { found, queued: fresh.length };
 }
 
+/**
+ * Best sellers for one keyword: aliexpress.ds.text.search sorted by orders, two pages of 50.
+ * New product ids go into ae_candidates (feed "search: <keyword>") and are vetted like feed products.
+ */
+export async function discoverFromSearch(env: Env, token: string, keyword: string): Promise<{ found: number; queued: number }> {
+  const t = now();
+  const ids: string[] = [];
+  for (const pageIndex of [1, 2]) {
+    const payload = await callBusiness(env, "aliexpress.ds.text.search", token, {
+      keyWord: keyword, local: "en_US", countryCode: env.AE_SHIP_TO_COUNTRY, currency: env.STORE_CURRENCY,
+      sortBy: "orders,desc", pageSize: 50, pageIndex,
+    });
+    const page = feedProductIds(payload);
+    ids.push(...page.filter((id) => !ids.includes(id)));
+    if (page.length < 50) break;
+  }
+  const fresh: string[] = [];
+  const feed = `search: ${keyword}`.slice(0, 80);
+  for (let i = 0; i < ids.length; i += 50) {
+    const res = await env.DB.batch(
+      ids.slice(i, i + 50).map((id) =>
+        env.DB.prepare(`INSERT OR IGNORE INTO ae_candidates (aliexpress_product_id, feed, status, found_at, updated_at) VALUES (?, ?, 'new', ?, ?)`).bind(id, feed, t, t),
+      ),
+    );
+    res.forEach((r, j) => { if (r.meta.changes > 0) fresh.push(ids[i + j]!); });
+  }
+  for (let i = 0; i < fresh.length; i += 100) {
+    await env.JOBS.sendBatch(fresh.slice(i, i + 100).map((id) => ({ body: { type: "vet-candidate" as const, aeProductId: id } })));
+  }
+  return { found: ids.length, queued: fresh.length };
+}
+
+/** Keywords searched every night (DISCOVERY_KEYWORDS), one queued job each. */
+export const discoveryKeywords = (env: Env) => (env.DISCOVERY_KEYWORDS ?? "").split(",").map((k) => k.trim()).filter(Boolean);
+
 /** Cheapest delivery to one country, in store-currency cents; null when not deliverable or unreadable. */
 async function cheapestShippingCents(env: Env, token: string, aeProductId: string, skuId: string | undefined, country: string): Promise<number | null> {
   const payload = await callBusiness(env, "aliexpress.ds.freight.query", token, {
@@ -141,14 +177,19 @@ export async function vetCandidate(env: Env, token: string, aeProductId: string)
   else if (rating < s.minRating) reasons.push(`rating ${rating}`);
   if (orders === null) reasons.push("no order count");
   else if (orders < s.minOrders) reasons.push(`${orders} orders`);
-  if (storeRatings.some((r) => r < s.minRating)) reasons.push(`store ratings ${storeRatings.join("/")}`);
+  if (storeRatings.some((r) => r < s.minStoreRating)) reasons.push(`store ratings ${storeRatings.join("/")}`);
 
+  // Delivery: Australia is required; the US and UAE are optional. A product is sold only to the
+  // countries it reaches within the cost limit (checkout enforces products.ship_countries).
   const shipping: Record<string, number | null> = {};
+  const reachable: string[] = [];
   if (reasons.length === 0) {
     for (const c of s.countries) {
       shipping[c] = await cheapestShippingCents(env, token, aeProductId, skuId === undefined ? undefined : String(skuId), c).catch(() => null);
-      if (shipping[c] === null) reasons.push(`no delivery to ${c}`);
-      else if (shipping[c]! > s.maxShipCents) reasons.push(`${c} delivery ${shipping[c]}c`);
+      if (shipping[c] !== null && shipping[c]! <= s.maxShipCents) reachable.push(c);
+    }
+    if (!reachable.includes("AU")) {
+      reasons.push(shipping.AU === null || shipping.AU === undefined ? "no delivery to AU" : `AU delivery ${shipping.AU}c`);
     }
   }
 
@@ -164,6 +205,6 @@ export async function vetCandidate(env: Env, token: string, aeProductId: string)
     }
   }
   await env.DB.prepare(
-    `UPDATE ae_candidates SET status = ?, rating = ?, orders = ?, shipping_json = ?, reason = ?, updated_at = ? WHERE aliexpress_product_id = ?`,
-  ).bind(status, rating, orders, JSON.stringify(shipping), reasons.join("; ") || null, now(), aeProductId).run();
+    `UPDATE ae_candidates SET status = ?, rating = ?, orders = ?, shipping_json = ?, ship_countries = ?, reason = ?, updated_at = ? WHERE aliexpress_product_id = ?`,
+  ).bind(status, rating, orders, JSON.stringify(shipping), reachable.length ? reachable.join(",") : null, reasons.join("; ") || null, now(), aeProductId).run();
 }

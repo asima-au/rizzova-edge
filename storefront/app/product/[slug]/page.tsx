@@ -88,6 +88,11 @@ export default async function ProductPage({ params }: { params: Params }) {
             </p>
           )}
           <h1 id="product-title" className="text-balance font-[family-name:var(--font-display)] text-2xl font-bold leading-tight sm:text-3xl">{product.title}</h1>
+          {product.shipCountries && product.shipCountries.length > 0 && product.shipCountries.length < 3 && (
+            <p className="mt-3 inline-block rounded-[var(--radius-chip)] bg-[var(--color-olive)] px-3 py-1 text-sm font-semibold text-[#f7f2e8]">
+              Ships to {product.shipCountries.map((c) => ({ AU: "Australia", US: "the United States", AE: "the UAE" })[c] ?? c).join(" and ")} only
+            </p>
+          )}
           {product.isSample && product.description && <p className="mt-3 text-[var(--color-muted)]">{product.description}</p>}
         </header>
         <ProductExperience product={product} complements={complements} />

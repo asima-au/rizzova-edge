@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS products (
   max_price_cents       INTEGER,
   feature_image_id      TEXT,                        -- Cloudflare Images id
   total_stock           INTEGER NOT NULL DEFAULT 0,
+  ship_countries        TEXT,                        -- e.g. 'AU' or 'AU,US'; NULL = every checkout country
   last_synced_at        INTEGER,
   sync_error            TEXT,
   created_at            INTEGER NOT NULL,
@@ -106,6 +107,7 @@ CREATE TABLE IF NOT EXISTS ae_candidates (
   rating                REAL,
   orders                INTEGER,
   shipping_json         TEXT,                        -- {"AU": cents, "US": cents, "AE": cents}
+  ship_countries        TEXT,                        -- countries reachable within the delivery cost limit
   reason                TEXT,                        -- why it was rejected
   found_at              INTEGER NOT NULL,
   updated_at            INTEGER NOT NULL

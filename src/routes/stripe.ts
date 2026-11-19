@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { Env } from "../env";
 import { hmacSha256Hex, now, safeEqual } from "../lib/util";
+import { alertNewOrder } from "../lib/alert";
 
 export const stripeWebhook = new Hono<{ Bindings: Env }>();
 
@@ -55,6 +56,8 @@ stripeWebhook.post("/", async (c) => {
     ).run();
     // Only live payments are sent to AliExpress, and only when AUTO_FULFIL is "on"; otherwise the order waits as 'paid'.
     if (updated.meta.changes && event.livemode && c.env.AUTO_FULFIL === "on") await c.env.JOBS.send({ type: "fulfil-order", orderId });
+    // Email the owner straight away for every new live paid order.
+    if (updated.meta.changes && event.livemode) c.executionCtx.waitUntil(alertNewOrder(c.env, orderId));
   }
 
   if (event.type === "checkout.session.expired") {

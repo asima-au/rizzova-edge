@@ -10,7 +10,7 @@ export const checkout = new Hono<{ Bindings: Env }>();
 
 interface VariantRow {
   id: number; sku: string; price_cents: number; cost_cents: number; stock_qty: number;
-  ae_sku_attr: string; aliexpress_product_id: string; title: string; currency: string;
+  ae_sku_attr: string; aliexpress_product_id: string; title: string; currency: string; ship_countries: string | null;
 }
 
 async function nextOrderNumber(db: D1Database): Promise<string> {
@@ -42,15 +42,14 @@ function parseShipping(v: unknown, allowed: string[]): ShippingInput | null {
  */
 checkout.post("/", async (c) => {
   const body = await c.req.json<{ email?: string; shipping?: unknown; shippingMethod?: unknown }>().catch(() => ({} as { email?: string; shipping?: unknown; shippingMethod?: unknown }));
-  const allowedCountries = c.env.CHECKOUT_COUNTRIES.split(",").map((x) => x.trim()).filter(Boolean);
-  const shipping = parseShipping(body.shipping, allowedCountries);
+  let allowedCountries = c.env.CHECKOUT_COUNTRIES.split(",").map((x) => x.trim()).filter(Boolean);
   const cart = await loadCart(c.env, getCookie(c, "rz_cart"));
   if (!cart || cart.lines.length === 0) return c.json({ error: "Cart is empty" }, 400);
   if (cart.lines.length > MAX_LINES) return c.json({ error: "Too many lines" }, 400);
 
   const ids = [...new Set(cart.lines.map((l) => l.variantId))];
   const { results: rows } = await c.env.DB.prepare(
-    `SELECT v.id, v.sku, v.price_cents, v.cost_cents, v.stock_qty, v.ae_sku_attr, p.aliexpress_product_id, p.title, p.currency
+    `SELECT v.id, v.sku, v.price_cents, v.cost_cents, v.stock_qty, v.ae_sku_attr, p.aliexpress_product_id, p.title, p.currency, p.ship_countries
      FROM product_variants v JOIN products p ON p.id = v.product_id
      WHERE v.id IN (${ids.map(() => "?").join(",")}) AND v.is_active = 1 AND p.status = 'active'`,
   ).bind(...ids).all<VariantRow>();
@@ -66,6 +65,22 @@ checkout.post("/", async (c) => {
     else if (v.stock_qty < qty) problems.push({ variantId, reason: `only ${v.stock_qty} left` });
   }
   if (problems.length) return c.json({ error: "Some items changed", problems }, 409);
+
+  // Some products ship to Australia only: checkout (and Stripe's address form) offers just the countries every item reaches.
+  for (const v of rows) {
+    if (v.ship_countries) allowedCountries = allowedCountries.filter((cc) => v.ship_countries!.split(",").includes(cc));
+  }
+  if (allowedCountries.length === 0) return c.json({ error: "These items can't be delivered together. Please order them separately." }, 409);
+  const requestedCountry = typeof (body.shipping as { country?: unknown } | undefined)?.country === "string"
+    ? String((body.shipping as { country: string }).country).toUpperCase() : null;
+  if (requestedCountry && !allowedCountries.includes(requestedCountry)) {
+    const limited = rows.filter((v) => v.ship_countries && !v.ship_countries.split(",").includes(requestedCountry));
+    return c.json({
+      error: `${limited.map((v) => v.title.slice(0, 60)).join(", ")} ships to ${allowedCountries.join(" and ")} only.`,
+      problems: [...new Set(limited.map((v) => v.id))].map((variantId) => ({ variantId, reason: `ships to ${allowedCountries.join(" and ")} only` })),
+    }, 409);
+  }
+  const shipping = parseShipping(body.shipping, allowedCountries);
 
   // Server-side bundle pricing: rate by the number of distinct lines still in each bundle.
   const bundleSizes = new Map<string, number>();
