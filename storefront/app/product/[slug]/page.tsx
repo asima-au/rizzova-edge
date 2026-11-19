@@ -75,10 +75,17 @@ export default async function ProductPage({ params }: { params: Params }) {
           </summary>
           <div
             className="mt-4 max-w-3xl text-[var(--color-muted)] [&_*]:!bg-transparent [&_*]:!font-[family-name:var(--font-sans)] [&_*]:!text-inherit [&_img]:mx-auto [&_img]:my-3 [&_img]:!h-auto [&_img]:max-h-[420px] [&_img]:!w-auto [&_img]:max-w-full [&_img]:rounded-xl [&_img]:object-contain"
-            dangerouslySetInnerHTML={{ __html: product.description }}
+            dangerouslySetInnerHTML={{ __html: asHtml(product.description) }}
           />
         </details>
       )}
     </article>
   );
+}
+
+/** Approved Rizz AI copy is plain text with blank-line paragraphs; supplier copy is already (sanitised) HTML. */
+function asHtml(text: string): string {
+  if (/<[a-z][\s\S]*>/i.test(text)) return text;
+  const esc = (v: string) => v.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]!);
+  return text.split(/\n{2,}/).map((para) => `<p>${esc(para.trim()).replace(/\n/g, "<br>")}</p>`).join("");
 }
