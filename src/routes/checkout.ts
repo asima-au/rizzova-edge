@@ -115,6 +115,8 @@ checkout.post("/", async (c) => {
     "metadata[order_id]": orderId,
     "payment_intent_data[metadata][order_id]": orderId,
     "phone_number_collection[enabled]": "true",
+    // Discount codes are created and limited in the Stripe Dashboard (Product catalogue → Coupons); the paid total comes back via the webhook.
+    allow_promotion_codes: "true",
   });
   if (shipping) {
     // Address already collected by the storefront: attach it to a Stripe customer so it is not asked twice.
