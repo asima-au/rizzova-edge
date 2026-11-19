@@ -35,6 +35,8 @@ consoleApp.get("/home", requireAdmin, (c) => c.html(page(`<h1>Rizzova admin</h1>
 <a class="b" href="/oauth/aliexpress/health">2. Check the AliExpress connection</a>
 <a class="b" href="/admin/discovery/run">3. Import products now</a>
 <a class="b" href="/admin/candidates">4. See import results</a>
+<a class="b" href="/admin/stripe/status">Check Stripe payments (test or live)</a>
+<form method="post" action="/admin/stripe/setup"><button type="submit">Connect Stripe payments (run after changing the key)</button></form>
 <form method="post" action="/console/legacy/match"><button type="submit">Find my old Hostinger products on AliExpress</button></form>
 <form method="post" action="/console/legacy/import"><button type="submit">Add the matched old products to the store</button></form>
 <a class="b" href="/console/legacy">See old-product matching results</a>
