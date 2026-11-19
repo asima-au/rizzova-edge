@@ -10,7 +10,7 @@ import { now } from "../lib/util";
  * by title and accept the candidate whose SKUs share most of those values. Unsure matches are
  * left unmatched rather than guessed.
  */
-const MAX_CANDIDATES = 3;   // product.get calls per job; keeps a 10-message batch under the free-plan subrequest limit
+const MAX_CANDIDATES = 3;   // up to 3 searches + 3 product.get calls per job; batches of 5 stay under the free-plan subrequest limit
 const MIN_OVERLAP = 0.5;    // share of the old product's option codes the AliExpress listing must have
 
 /** Option codes on an AliExpress listing, split from each SKU's sku_attr ("14:173#Blue;5:100014064"). */
@@ -31,11 +31,19 @@ export async function matchLegacy(env: Env, token: string, wcId: number): Promis
       .bind(status, ae, score, note.slice(0, 300), now(), wcId).run();
   if (wanted.length === 0) return void (await save("nomatch", null, null, "no option codes to compare"));
 
-  const keyWord = row.title.replace(/[|–—-].*$/, "").split(/\s+/).slice(0, 8).join(" ");
-  const payload = await callBusiness(env, "aliexpress.ds.text.search", token, {
-    keyWord, local: "en_US", countryCode: env.AE_SHIP_TO_COUNTRY, currency: env.STORE_CURRENCY, pageSize: 10, pageIndex: 1,
-  });
-  const candidates = feedProductIds(payload).slice(0, MAX_CANDIDATES);
+  // Long cleaned-up titles often find nothing, so retry with the first 5, then 3 words.
+  const words = row.title.replace(/[|–—(].*$/, "").replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
+  let keyWord = "";
+  let candidates: string[] = [];
+  for (const n of [8, 5, 3]) {
+    if (n < 8 && words.length <= n) break;
+    keyWord = words.slice(0, n).join(" ");
+    const payload = await callBusiness(env, "aliexpress.ds.text.search", token, {
+      keyWord, local: "en_US", countryCode: env.AE_SHIP_TO_COUNTRY, currency: env.STORE_CURRENCY, pageSize: 10, pageIndex: 1,
+    });
+    candidates = feedProductIds(payload).slice(0, MAX_CANDIDATES);
+    if (candidates.length > 0) break;
+  }
   if (candidates.length === 0) return void (await save("nomatch", null, null, `search found nothing for "${keyWord}"`));
 
   let best: { id: string; score: number } | null = null;

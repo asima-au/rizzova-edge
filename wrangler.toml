@@ -51,7 +51,7 @@ queue = "rizzova-jobs"
 
 [[queues.consumers]]
 queue = "rizzova-jobs"
-max_batch_size = 10
+max_batch_size = 5               # each job may make ~6 AliExpress calls; free plan allows 50 per invocation
 max_batch_timeout = 5
 max_retries = 5
 dead_letter_queue = "rizzova-jobs-dlq"
