@@ -3,11 +3,15 @@ import { getAccessToken, refreshToken, REFRESH_WINDOW_MS, tokenHealth } from "./
 import { ingestProduct, recordSyncError } from "./ingest/product";
 import { getDsOrder, placeDsOrder } from "./aliexpress/dropshipper";
 import { now } from "./lib/util";
+import { discoverFromFeeds, vetCandidate } from "./ingest/discover";
+import { matchLegacy } from "./ingest/legacy";
 
 export type Job =
   | { type: "ingest-product"; aeProductId: string }
   | { type: "fulfil-order"; orderId: string }
-  | { type: "track-fulfilment"; fulfilmentId: number };
+  | { type: "track-fulfilment"; fulfilmentId: number }
+  | { type: "vet-candidate"; aeProductId: string }
+  | { type: "match-legacy"; wcId: number };
 
 const SYNC_BATCH = 200;
 
@@ -22,6 +26,8 @@ export async function handleQueue(batch: MessageBatch<Job>, env: Env): Promise<v
       if (job.type === "ingest-product") await ingestProduct(env, await getToken(), job.aeProductId);
       else if (job.type === "fulfil-order") await fulfilOrder(env, await getToken(), job.orderId);
       else if (job.type === "track-fulfilment") await trackFulfilment(env, await getToken(), job.fulfilmentId);
+      else if (job.type === "vet-candidate") await vetCandidate(env, await getToken(), job.aeProductId);
+      else if (job.type === "match-legacy") await matchLegacy(env, await getToken(), job.wcId);
       msg.ack();
     } catch (err) {
       const message = (err as Error).message;
@@ -111,7 +117,13 @@ export async function handleCron(controller: ScheduledController, env: Env): Pro
       }
       return;
     }
-    case "30 2 * * *": {
+    case "0 13 * * *": {
+      // Midnight in Sydney (AEDT). Shares this slot because the free plan allows 5 crons per account.
+      const r = await discoverFromFeeds(env, await getAccessToken(env)).catch((err) => {
+        console.error("discovery", (err as Error).message);
+        return null;
+      });
+      if (r) console.log(`discovery: ${r.found} feed items, ${r.queued} new candidates queued for vetting`);
       const { results } = await env.DB.prepare(`SELECT id FROM fulfillments WHERE status IN ('placed','shipped') LIMIT 500`).all<{ id: number }>();
       for (let i = 0; i < results.length; i += 100) {
         await env.JOBS.sendBatch(results.slice(i, i + 100).map((r) => ({ body: { type: "track-fulfilment" as const, fulfilmentId: r.id } })));

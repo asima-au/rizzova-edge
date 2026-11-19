@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
+import legacy from "@/lib/legacy-redirects.json";
 import { MediaGallery, type MediaItem } from "@/components/pdp/media-gallery";
 import { ProductExperience } from "@/components/pdp/product-experience";
 import { SpecPanel } from "@/components/pdp/spec-panel";
@@ -13,8 +14,16 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 }
 
 export default async function ProductPage({ params }: { params: Params }) {
-  const product = await getProduct((await params).slug);
-  if (!product) notFound();
+  const { slug } = await params;
+  const product = await getProduct(slug);
+  if (!product) {
+    // Old rizzova.com (WooCommerce) product addresses: matched products move permanently, others go to a search.
+    const moved = (legacy as Record<string, string>)[slug];
+    if (moved) permanentRedirect(`/product/${moved}`);
+    const words = slug.split("-").filter((w) => /^[a-z]{3,}$/.test(w)).slice(0, 4).join(" ");
+    if (words) redirect(`/?q=${encodeURIComponent(words)}`);
+    notFound();
+  }
   const complements = await getComplements(product);
   const media: MediaItem[] = product.images.map((src, i) => ({ kind: "image", src, alt: `${product.title}, image ${i + 1}` }));
   const prices = product.variants.map((v) => v.priceCents / 100);
@@ -52,15 +61,24 @@ export default async function ProductPage({ params }: { params: Params }) {
             </p>
           )}
           <h1 id="product-title" className="text-balance font-[family-name:var(--font-display)] text-2xl font-bold leading-tight sm:text-3xl">{product.title}</h1>
-          {product.description && (
-            product.isSample
-              ? <p className="mt-3 text-[var(--color-muted)]">{product.description}</p>
-              // Supplier HTML is sanitised by the ingestion Worker before it reaches D1.
-              : <div className="prose-invert mt-3 max-w-none text-[var(--color-muted)]" dangerouslySetInnerHTML={{ __html: product.description }} />
-          )}
+          {product.isSample && product.description && <p className="mt-3 text-[var(--color-muted)]">{product.description}</p>}
         </header>
         <ProductExperience product={product} complements={complements} />
       </div>
+      {product.description && !product.isSample && (
+        // Supplier HTML (sanitised by the ingestion Worker) is long and image-heavy: full width, folded, images kept to a sensible size.
+        <details className="glass group rounded-[var(--radius-panel)] p-5 sm:p-6 lg:col-span-2">
+          <summary className="flex cursor-pointer list-none items-center justify-between font-[family-name:var(--font-display)] text-xl font-semibold">
+            Product description
+            <span className="text-sm font-[family-name:var(--font-sans)] font-semibold text-[var(--color-accent-ink)] underline underline-offset-4 group-open:hidden">Read more</span>
+            <span className="hidden text-sm font-[family-name:var(--font-sans)] font-semibold underline underline-offset-4 group-open:inline">Show less</span>
+          </summary>
+          <div
+            className="mt-4 max-w-3xl text-[var(--color-muted)] [&_*]:!bg-transparent [&_*]:!font-[family-name:var(--font-sans)] [&_*]:!text-inherit [&_img]:mx-auto [&_img]:my-3 [&_img]:!h-auto [&_img]:max-h-[420px] [&_img]:!w-auto [&_img]:max-w-full [&_img]:rounded-xl [&_img]:object-contain"
+            dangerouslySetInnerHTML={{ __html: product.description }}
+          />
+        </details>
+      )}
     </article>
   );
 }

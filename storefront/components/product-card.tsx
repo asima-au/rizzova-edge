@@ -36,7 +36,7 @@ export function ProductCard({ product, aspect, index }: { product: Product; aspe
       viewport={{ once: true, margin: "-40px" }}
       transition={{ ...spring.soft, delay: reduce ? 0 : Math.min(index, 8) * 0.04 }}
       whileHover={reduce ? undefined : { y: -4 }}
-      className="group glass mb-5 break-inside-avoid overflow-hidden rounded-[var(--radius-card)] shadow-[var(--shadow-glass)] transition-colors hover:border-white/25"
+      className="group glass mb-5 break-inside-avoid overflow-hidden rounded-[var(--radius-card)] shadow-[var(--shadow-glass)] transition-colors hover:border-black/25"
       aria-labelledby={`p-${product.id}-title`}
       itemScope
       itemType="https://schema.org/Product"
@@ -77,7 +77,7 @@ export function ProductCard({ product, aspect, index }: { product: Product; aspe
                     aria-pressed={selected}
                     aria-label={`${axis.name}: ${value}${out ? ", sold out" : ""}`}
                     className={`rounded-[var(--radius-chip)] border px-2.5 py-1 text-xs transition-colors ${
-                      selected ? "border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-fg)]" : "border-white/15 text-[var(--color-muted)] hover:border-white/40"
+                      selected ? "border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-fg)]" : "border-black/15 text-[var(--color-muted)] hover:border-black/40"
                     } ${out ? "line-through opacity-50" : ""}`}
                   >
                     {value}

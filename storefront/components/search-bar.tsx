@@ -6,8 +6,8 @@ import { motion, useReducedMotion } from "motion/react";
 import { Search, X } from "lucide-react";
 import { spring } from "@/lib/tokens";
 
-/** Expanding search: grows on focus, "/" focuses it from anywhere, Escape clears and leaves. */
-export function SearchBar() {
+/** Search box: "/" focuses it from anywhere, Escape clears and leaves. `wide` fills its row (header); otherwise it grows on focus. */
+export function SearchBar({ wide = false }: { wide?: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
   const [value, setValue] = useState(params.get("q") ?? "");
@@ -40,9 +40,9 @@ export function SearchBar() {
     <motion.form
       role="search"
       onSubmit={submit}
-      animate={{ width: focused ? 360 : 220 }}
+      animate={wide ? undefined : { width: focused ? 360 : 220 }}
       transition={reduce ? { duration: 0 } : spring.snappy}
-      className="glass relative flex h-11 min-w-0 max-w-full items-center rounded-[var(--radius-control)] pl-3 pr-2 focus-within:border-[var(--color-accent)]"
+      className={`glass relative flex min-w-0 max-w-full items-center rounded-[var(--radius-control)] pl-3 pr-2 focus-within:border-[var(--color-accent)] ${wide ? "h-12 w-full border-2" : "h-11"}`}
     >
       <label htmlFor={id} className="sr-only">Search products</label>
       <Search className="size-4 shrink-0 text-[var(--color-muted)]" aria-hidden />
@@ -60,16 +60,16 @@ export function SearchBar() {
             inputRef.current?.blur();
           }
         }}
-        placeholder="Search Rizzova"
+        placeholder={wide ? "Search gifts, home, pets, kids, tech…" : "Search Rizzova"}
         autoComplete="off"
-        className="min-w-0 flex-1 bg-transparent px-2 text-sm outline-none placeholder:text-[var(--color-muted)] [&::-webkit-search-cancel-button]:hidden"
+        className="min-w-0 flex-1 bg-transparent px-2 text-[15px] outline-none placeholder:text-[var(--color-muted)] [&::-webkit-search-cancel-button]:hidden"
       />
       {value ? (
         <button type="button" onClick={() => setValue("")} aria-label="Clear search" className="grid size-7 place-items-center rounded-lg text-[var(--color-muted)] hover:text-[var(--color-fg)]">
           <X className="size-4" aria-hidden />
         </button>
       ) : (
-        <kbd className="hidden rounded-md border border-white/15 px-1.5 font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-muted)] sm:block" aria-hidden>
+        <kbd className="hidden rounded-md border border-black/15 px-1.5 font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-muted)] sm:block" aria-hidden>
           /
         </kbd>
       )}

@@ -8,11 +8,11 @@ export function DeliveryBand({ section }: { section: number }) {
   return (
     <section aria-labelledby="delivery-h" className="bg-[var(--color-ink)] pb-24 text-[var(--color-fg)] sm:pb-32">
       <div className="container-x">
-        <h2 id="delivery-h" className="border-b border-white/15 pb-4 font-[family-name:var(--font-mono)] text-xs uppercase tracking-[0.2em]">{sectionLabel(section, "Delivery")}</h2>
+        <h2 id="delivery-h" className="border-b border-black/15 pb-4 font-[family-name:var(--font-mono)] text-xs uppercase tracking-[0.2em]">{sectionLabel(section, "Delivery")}</h2>
         <p className="mt-10 max-w-3xl font-[family-name:var(--font-serif)] leading-[1.02]" style={{ fontSize: "clamp(2.4rem, 5vw, 4.5rem)" }}>
           Free to your door. <span className="italic text-[var(--color-accent)]">Almost everywhere we go.</span>
         </p>
-        <ul className="mt-12 grid grid-cols-[minmax(0,1fr)] gap-px overflow-hidden rounded-3xl bg-white/10 sm:grid-cols-3">
+        <ul className="mt-12 grid grid-cols-[minmax(0,1fr)] gap-px overflow-hidden rounded-3xl bg-black/5 sm:grid-cols-3">
           {zones.map(([code, zone]) => {
             const opts = shippingOptions(code);
             return (

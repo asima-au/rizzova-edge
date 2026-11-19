@@ -36,7 +36,7 @@ export function ProductArt({ src, alt, seed, label, aspect, isSample = false, cl
         </div>
       )}
       {isSample && (
-        <span className="absolute left-3 top-3 rounded-[var(--radius-chip)] border border-white/25 bg-black/50 px-2 py-0.5 font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-wider">
+        <span className="absolute left-3 top-3 rounded-[var(--radius-chip)] border border-black/25 bg-black/50 px-2 py-0.5 font-[family-name:var(--font-mono)] text-[10px] uppercase tracking-wider">
           Sample
         </span>
       )}

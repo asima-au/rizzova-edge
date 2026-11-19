@@ -1,12 +1,17 @@
 import { Hono, type MiddlewareHandler } from "hono";
+import { getCookie } from "hono/cookie";
 import type { Env } from "../env";
 import { safeEqual, now } from "../lib/util";
 import { callSystem, callBusiness, AliExpressError } from "../aliexpress/client";
 import { getAccessToken } from "../aliexpress/auth";
+import { discoverFromFeeds } from "../ingest/discover";
+
+/** Set by the owner console (/console) so admin links work without the password in the URL. */
+export const ADMIN_COOKIE = "rz_admin";
 
 export const requireAdmin: MiddlewareHandler<{ Bindings: Env }> = async (c, next) => {
   const header = c.req.header("authorization") ?? "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : c.req.query("admin_token") ?? "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : c.req.query("admin_token") ?? getCookie(c, ADMIN_COOKIE) ?? "";
   if (!c.env.ADMIN_TOKEN || !token || !safeEqual(token, c.env.ADMIN_TOKEN)) return c.json({ error: "Unauthorised" }, 401);
   await next();
 };
@@ -26,6 +31,47 @@ admin.post("/import", async (c) => {
         c.env.DB.prepare(`INSERT OR IGNORE INTO import_queue (aliexpress_product_id, requested_at) VALUES (?, ?)`).bind(id, t),
       ),
     );
+  }
+  for (let i = 0; i < ids.length; i += 100) {
+    await c.env.JOBS.sendBatch(ids.slice(i, i + 100).map((id) => ({ body: { type: "ingest-product" as const, aeProductId: id } })));
+  }
+  return c.json({ queued: ids.length });
+});
+
+/** Run the nightly discovery now. GET so the owner can open it in a browser; vetting then runs on the queue. */
+admin.get("/discovery/run", async (c) => {
+  try {
+    const r = await discoverFromFeeds(c.env, await getAccessToken(c.env));
+    return c.json({ ...r, next: "Vetting runs in the background. Check /admin/candidates in a few minutes." });
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 502);
+  }
+});
+
+/** Discovery results: GET /admin/candidates?status=passed|rejected|imported|new */
+admin.get("/candidates", async (c) => {
+  const status = c.req.query("status");
+  const stmt = status
+    ? c.env.DB.prepare(`SELECT * FROM ae_candidates WHERE status = ? ORDER BY updated_at DESC LIMIT 200`).bind(status)
+    : c.env.DB.prepare(`SELECT * FROM ae_candidates ORDER BY updated_at DESC LIMIT 200`);
+  const { results } = await stmt.all();
+  return c.json({ count: results.length, candidates: results });
+});
+
+/** Import vetted candidates by hand (used when AUTO_IMPORT is off): { "ids": [...] } or { "ids": "all" } */
+admin.post("/candidates/approve", async (c) => {
+  const body = await c.req.json<{ ids?: unknown }>().catch(() => ({ ids: undefined }));
+  const { results } = body.ids === "all"
+    ? await c.env.DB.prepare(`SELECT aliexpress_product_id AS id FROM ae_candidates WHERE status = 'passed'`).all<{ id: string }>()
+    : { results: (Array.isArray(body.ids) ? body.ids : []).map((id) => ({ id: String(id) })) };
+  const ids = results.map((r) => r.id).filter((s) => /^\d{6,20}$/.test(s));
+  if (ids.length === 0) return c.json({ error: 'Send { "ids": [...] } or { "ids": "all" }' }, 400);
+  const t = now();
+  for (const id of ids) {
+    await c.env.DB.batch([
+      c.env.DB.prepare(`INSERT OR IGNORE INTO import_queue (aliexpress_product_id, requested_at) VALUES (?, ?)`).bind(id, t),
+      c.env.DB.prepare(`UPDATE ae_candidates SET status = 'imported', updated_at = ? WHERE aliexpress_product_id = ?`).bind(t, id),
+    ]);
   }
   for (let i = 0; i < ids.length; i += 100) {
     await c.env.JOBS.sendBatch(ids.slice(i, i + 100).map((id) => ({ body: { type: "ingest-product" as const, aeProductId: id } })));

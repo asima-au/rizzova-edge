@@ -32,7 +32,7 @@ export function PicksCarousel({ products, section }: { products: Product[]; sect
   return (
     <section aria-labelledby="picks-h" aria-roledescription="carousel" className="bg-[var(--color-ink)] py-24 text-[var(--color-fg)] sm:py-32">
       <div className="container-x">
-        <div className="flex items-baseline justify-between border-b border-white/15 pb-4 font-[family-name:var(--font-mono)] text-xs uppercase tracking-[0.2em]">
+        <div className="flex items-baseline justify-between border-b border-black/15 pb-4 font-[family-name:var(--font-mono)] text-xs uppercase tracking-[0.2em]">
           <h2 id="picks-h">{sectionLabel(section, "Three picks")}</h2>
           <span aria-live="polite">{i + 1} / {products.length}</span>
         </div>
@@ -52,7 +52,7 @@ export function PicksCarousel({ products, section }: { products: Product[]; sect
                 <span aria-hidden className="size-4 shrink-0 rounded-full" style={{ background: DOTS[i % DOTS.length] }} />
               </h3>
               <p className="mt-3 font-[family-name:var(--font-serif)] text-xl italic text-[var(--color-muted)]">From {formatMoney(fromPrice(p), p.currency)} · free delivery to AU &amp; US</p>
-              <dl className="mt-8 divide-y divide-white/10 border-y border-white/10 text-sm">
+              <dl className="mt-8 divide-y divide-white/10 border-y border-black/10 text-sm">
                 {specLines(p).map((s) => (
                   <div key={s.label} className="flex justify-between gap-6 py-2.5">
                     <dt className="text-[var(--color-muted)]">{s.label}</dt>

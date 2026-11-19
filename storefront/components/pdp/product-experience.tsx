@@ -71,7 +71,7 @@ export function ProductExperience({ product, complements }: { product: Product; 
                       aria-pressed={selected}
                       aria-label={`${axis} ${value}${available ? "" : ", sold out"}`}
                       className={`rounded-[var(--radius-control)] border-2 px-3.5 py-2 text-sm transition-[transform,colors] active:translate-y-0.5 ${
-                        selected ? "border-[var(--color-accent)] shadow-[var(--shadow-brutal-sm)]" : "border-white/15 hover:border-white/40"
+                        selected ? "border-[var(--color-accent)] shadow-[var(--shadow-brutal-sm)]" : "border-black/15 hover:border-black/40"
                       } ${available ? "" : "line-through opacity-50"}`}
                     >
                       {value}

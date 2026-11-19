@@ -1,6 +1,6 @@
 # Rizzova Edge – where we are (handover for a new session)
 
-Updated 27 Oct 2026. Start a new session with: "Read RESUME.md in cursor86/rizzova-edge and continue."
+Updated 4 Nov 2026. Start a new session with: "Read RESUME.md in cursor86/rizzova-edge and continue."
 
 ## ⭐ Start here (next session)
 **Status:** shop, backend, AliExpress and Stripe (test mode) all work end to end.
@@ -64,6 +64,19 @@ Env for wrangler: `CLOUDFLARE_API_TOKEN=proxy-injected CLOUDFLARE_ACCOUNT_ID=bee
   - TODO: switch tracking to `order.tracking.get` and add the feed import, after checking the field names
     with the console's API test tool.
 
+## Nightly product discovery (deployed 4 Nov 2026)
+- Cron `0 13 * * *` (midnight Sydney) pulls `DISCOVERY_FEEDS` with `ds.feed.itemids.get`, stores new ids in D1 `ae_candidates`,
+  and queues a `vet-candidate` job each. The job checks rating and store ratings >= 4.8, orders >= 100, and supplier delivery
+  <= A$3 to AU, US and AE (`ds.freight.query`). Passing products are imported (up to 10 per 24 h) while `AUTO_IMPORT = "on"`.
+  The cron slot is shared with tracking because the free plan allows 5 crons per account (all 5 are in use).
+- Settings are `DISCOVERY_*` and `AUTO_IMPORT` in `wrangler.toml`. Set `AUTO_IMPORT = "off"` to review first.
+- Owner console: `/console` (password form, then buttons; sets an HttpOnly cookie for 7 days that admin routes accept).
+- Run it now: `GET /admin/discovery/run` (works in a browser with `?admin_token=`).
+- Old Hostinger catalogue: D1 `legacy_products` (from the WooCommerce CSV). Console buttons match each product to an AliExpress listing by title search + option codes, then import the matches.
+- Review: `GET /admin/candidates?status=imported|passed|rejected`; import by hand: `POST /admin/candidates/approve {"ids": [...]|"all"}`.
+- The feed, rating and freight field names are not confirmed yet, so every check fails closed. After the first run, check
+  `?status=rejected`: if every reason is "no rating" or "no delivery to …", fix the field names in `src/ingest/discover.ts`.
+
 ## To do (in order)
 1. Connect AliExpress (above), then import 3–5 test products via `POST /admin/import` and check prices, photos and variants.
 2. Black Friday (27 Nov): pull promo feeds, shortlist products, get the owner's approval, import.
@@ -72,9 +85,11 @@ Env for wrangler: `CLOUDFLARE_API_TOKEN=proxy-injected CLOUDFLARE_ACCOUNT_ID=bee
    (Cainiao standard 6–10 days, about A$3) and no US/UAE delivery. Turn it on once products with faster services are imported.
    Products must also be checked with `ds.freight.query` for each country before import.
    Owner rule (24 Oct 2026): supplier shipping up to about $3 per order is fine; the margin absorbs it and delivery stays free to AU/US.
-4. Stripe: done in test mode (key set by owner, webhook created by `/admin/stripe/setup`, secret in KV).
-5. Point the storefront at the backend (`RIZZOVA_API_URL`), then take real orders.
-6. Hostinger WooCommerce shop stays live until then (paid until 20 Aug 2027).
+4. Stripe: LIVE since 19 Nov 2026 (restricted key `rk_live_` in STRIPE_SECRET_KEY, live webhook created via console button, secret in KV). Statement descriptor RIZZOVA.COM.
+5. LIVE: rizzova.com and www.rizzova.com are Worker custom domains on `rizzova-storefront` (19 Nov 2026). Backend PUBLIC_SITE_URL = https://rizzova.com.
+   Old WooCommerce links redirect (`storefront/lib/legacy-redirects.json`, `next.config.ts`).
+   ROLLBACK to Hostinger: remove the two Worker custom domains, then add DNS `A rizzova.com 5.183.10.242` (proxied) and `CNAME www -> rizzova.com` (proxied), and set PUBLIC_SITE_URL back.
+6. Hostinger no longer receives traffic. Before deleting it: export WooCommerce orders/customers and the digital product files.
 
 ## Owner preferences
 - Owner name appears only on her CV. Use "Rizz" everywhere else.

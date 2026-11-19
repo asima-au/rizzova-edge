@@ -40,7 +40,7 @@ export function EditorialHero({ featured, productCount, categoryCount }: Props) 
           ))}
         </h1>
         <p className="mt-6 font-[family-name:var(--font-serif)] text-2xl italic text-[var(--color-fg)]/85 sm:text-3xl">Such a good-looking find.</p>
-        <dl className="mt-8 flex flex-wrap gap-x-10 gap-y-4 border-t border-white/10 pt-5 font-[family-name:var(--font-mono)] text-xs uppercase tracking-wider text-[var(--color-muted)]">
+        <dl className="mt-8 flex flex-wrap gap-x-10 gap-y-4 border-t border-black/10 pt-5 font-[family-name:var(--font-mono)] text-xs uppercase tracking-wider text-[var(--color-muted)]">
           <div><dt>Products</dt><dd className="mt-1 text-2xl text-[var(--color-fg)]">{productCount}</dd></div>
           <div><dt>Categories</dt><dd className="mt-1 text-2xl text-[var(--color-fg)]">{categoryCount}</dd></div>
           <div><dt>Bundle &amp; save</dt><dd className="mt-1 text-2xl text-[var(--color-fg)]">up to 15%</dd></div>
@@ -55,7 +55,7 @@ export function EditorialHero({ featured, productCount, categoryCount }: Props) 
           initial={reduce ? false : { scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ ...spring.soft, delay: reduce ? 0 : 0.2 }}
-          className="aspect-square overflow-hidden rounded-full border-2 border-white/10 bg-white shadow-[var(--shadow-glass)]"
+          className="aspect-square overflow-hidden rounded-full border-2 border-black/10 bg-white shadow-[var(--shadow-glass)]"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={featured.images[0]} alt={featured.title} className="size-full object-cover" fetchPriority="high" />
