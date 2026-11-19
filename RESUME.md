@@ -85,7 +85,7 @@ Env for wrangler: `CLOUDFLARE_API_TOKEN=proxy-injected CLOUDFLARE_ACCOUNT_ID=bee
    (Cainiao standard 6–10 days, about A$3) and no US/UAE delivery. Turn it on once products with faster services are imported.
    Products must also be checked with `ds.freight.query` for each country before import.
    Owner rule (24 Oct 2026): supplier shipping up to about $3 per order is fine; the margin absorbs it and delivery stays free to AU/US.
-4. Stripe: done in test mode (key set by owner, webhook created by `/admin/stripe/setup`, secret in KV).
+4. Stripe: LIVE since 19 Nov 2026 (restricted key `rk_live_` in STRIPE_SECRET_KEY, live webhook created via console button, secret in KV). Statement descriptor RIZZOVA.COM.
 5. Storefront points at the backend (`RIZZOVA_API_URL` var in both storefront wrangler files, 19 Nov 2026). Next: live Stripe keys, then take real orders.
 6. Hostinger WooCommerce shop stays live until then (paid until 20 Aug 2027).
 
