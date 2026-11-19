@@ -44,7 +44,7 @@ export function feedProductIds(payload: unknown): string[] {
     const s = String(v ?? "").trim();
     if (/^\d{10,20}$/.test(s)) ids.add(s);
   };
-  for (const k of ["product_id", "productId", "product_ids", "item_id", "number", "products"]) findAll(payload, k).forEach(add);
+  for (const k of ["product_id", "productId", "product_ids", "item_id", "itemId", "number", "products"]) findAll(payload, k).forEach(add);
   return [...ids];
 }
 

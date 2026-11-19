@@ -72,6 +72,7 @@ Env for wrangler: `CLOUDFLARE_API_TOKEN=proxy-injected CLOUDFLARE_ACCOUNT_ID=bee
 - Settings are `DISCOVERY_*` and `AUTO_IMPORT` in `wrangler.toml`. Set `AUTO_IMPORT = "off"` to review first.
 - Owner console: `/console` (password form, then buttons; sets an HttpOnly cookie for 7 days that admin routes accept).
 - Run it now: `GET /admin/discovery/run` (works in a browser with `?admin_token=`).
+- Old Hostinger catalogue: D1 `legacy_products` (from the WooCommerce CSV). Console buttons match each product to an AliExpress listing by title search + option codes, then import the matches.
 - Review: `GET /admin/candidates?status=imported|passed|rejected`; import by hand: `POST /admin/candidates/approve {"ids": [...]|"all"}`.
 - The feed, rating and freight field names are not confirmed yet, so every check fails closed. After the first run, check
   `?status=rejected`: if every reason is "no rating" or "no delivery to …", fix the field names in `src/ingest/discover.ts`.

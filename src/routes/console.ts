@@ -35,6 +35,9 @@ consoleApp.get("/home", requireAdmin, (c) => c.html(page(`<h1>Rizzova admin</h1>
 <a class="b" href="/oauth/aliexpress/health">2. Check the AliExpress connection</a>
 <a class="b" href="/admin/discovery/run">3. Import products now</a>
 <a class="b" href="/admin/candidates">4. See import results</a>
+<form method="post" action="/console/legacy/match"><button type="submit">Find my old Hostinger products on AliExpress</button></form>
+<form method="post" action="/console/legacy/import"><button type="submit">Add the matched old products to the store</button></form>
+<a class="b" href="/console/legacy">See old-product matching results</a>
 <form method="post" action="/console/add"><p><b>Add products you picked:</b> paste AliExpress product links, one per line.</p>
 <textarea name="links" rows="5" style="width:100%;box-sizing:border-box;font-size:14px;border:1px solid #bbb;border-radius:10px;padding:10px"
 placeholder="https://www.aliexpress.com/item/1005008783400471.html"></textarea>
@@ -55,4 +58,38 @@ consoleApp.post("/add", requireAdmin, async (c) => {
   return c.html(page(`<h1>Adding ${ids.length} product${ids.length > 1 ? "s" : ""}</h1>
 <p>They appear on the store within a few minutes: ${ids.join(", ")}</p>
 <a class="b" href="${c.env.PUBLIC_SITE_URL}">Open the store</a><a class="b" href="/console/home">Back</a>`));
+});
+
+/** Queue every old product not yet matched (Halloween items skipped: out of season). */
+consoleApp.post("/legacy/match", requireAdmin, async (c) => {
+  const { results } = await c.env.DB.prepare(`SELECT wc_id FROM legacy_products WHERE status = 'new' AND halloween = 0`).all<{ wc_id: number }>();
+  for (let i = 0; i < results.length; i += 100) {
+    await c.env.JOBS.sendBatch(results.slice(i, i + 100).map((r) => ({ body: { type: "match-legacy" as const, wcId: r.wc_id } })));
+  }
+  return c.html(page(`<h1>Matching ${results.length} products</h1><p>This runs in the background and takes about 10–20 minutes.</p>
+<a class="b" href="/console/legacy">See results</a><a class="b" href="/console/home">Back</a>`));
+});
+
+consoleApp.post("/legacy/import", requireAdmin, async (c) => {
+  const { results } = await c.env.DB.prepare(`SELECT wc_id, ae_product_id FROM legacy_products WHERE status = 'matched'`).all<{ wc_id: number; ae_product_id: string }>();
+  const t = now();
+  for (let i = 0; i < results.length; i += 50) {
+    const chunk = results.slice(i, i + 50);
+    await c.env.DB.batch(chunk.flatMap((r) => [
+      c.env.DB.prepare(`INSERT OR IGNORE INTO import_queue (aliexpress_product_id, requested_at) VALUES (?, ?)`).bind(r.ae_product_id, t),
+      c.env.DB.prepare(`UPDATE legacy_products SET status = 'imported', updated_at = ? WHERE wc_id = ?`).bind(t, r.wc_id),
+    ]));
+    await c.env.JOBS.sendBatch(chunk.map((r) => ({ body: { type: "ingest-product" as const, aeProductId: r.ae_product_id } })));
+  }
+  return c.html(page(`<h1>Adding ${results.length} products</h1><p>They appear on the store within a few minutes.</p>
+<a class="b" href="${c.env.PUBLIC_SITE_URL}">Open the store</a><a class="b" href="/console/home">Back</a>`));
+});
+
+consoleApp.get("/legacy", requireAdmin, async (c) => {
+  const { results: counts } = await c.env.DB.prepare(`SELECT status, COUNT(*) AS n FROM legacy_products GROUP BY status`).all<{ status: string; n: number }>();
+  const { results: rows } = await c.env.DB.prepare(`SELECT title, status, ae_product_id, note FROM legacy_products WHERE status <> 'new' ORDER BY updated_at DESC LIMIT 300`).all<{ title: string; status: string; ae_product_id: string | null; note: string | null }>();
+  const esc = (s: string) => s.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]!);
+  return c.html(page(`<h1>Old products</h1><p>${counts.map((r) => `${r.status}: <b>${r.n}</b>`).join(" · ")}</p>
+<ul style="padding-left:18px">${rows.map((r) => `<li><b>${r.status}</b> – ${esc(r.title)}${r.ae_product_id ? ` – <a href="https://www.aliexpress.com/item/${r.ae_product_id}.html" target="_blank" rel="noopener">AliExpress</a>` : ""}<br><small>${esc(r.note ?? "")}</small></li>`).join("")}</ul>
+<a class="b" href="/console/home">Back</a>`));
 });
