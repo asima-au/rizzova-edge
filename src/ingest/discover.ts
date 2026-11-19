@@ -65,7 +65,7 @@ const settings = (env: Env) => ({
  * Owner rule (20 Nov 2026): no risky or high-value items that make returns a headache.
  * Weapons and hunting gear, footwear and sized clothing, higher-value electronics, batteries and cosmetics are skipped.
  */
-const BLOCKED = /\b(rifle|gun|pistol|airsoft|hunting|knife|knives|dagger|sword|taser|crossbow|ammo|scope|shoes?|boots?|sneakers?|heels|sandals?|dress|jeans|pants|trousers|shirt|jacket|coat|lingerie|bra|amplifier|dac|headphones?|earbuds|speaker|camera|drone|projector|smart ?watch|tablet|laptop|power ?bank|battery|batteries|lithium|vape|e-?cig|perfume|cosmetic|makeup|serum|cream|supplement|medicine|tattoo)\b/i;
+const BLOCKED = /\b(glucose|glucometer|blood|diabetes|thermometer|syringe|rifle|gun|pistol|airsoft|hunting|knife|knives|dagger|sword|taser|crossbow|ammo|scope|shoes?|boots?|sneakers?|heels|sandals?|dress|jeans|pants|trousers|shirt|jacket|coat|lingerie|bra|amplifier|dac|headphones?|earbuds|speaker|camera|drone|projector|smart ?watch|tablet|laptop|power ?bank|battery|batteries|lithium|vape|e-?cig|perfume|cosmetic|makeup|serum|cream|supplement|medicine|tattoo)\b/i;
 
 /** Cron step: pull feed ids, store unseen ones, queue them for vetting. */
 export async function discoverFromFeeds(env: Env, token: string): Promise<{ found: number; queued: number }> {
