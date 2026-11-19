@@ -35,6 +35,7 @@ consoleApp.get("/home", requireAdmin, (c) => c.html(page(`<h1>Rizzova admin</h1>
 <a class="b" href="/oauth/aliexpress/health">2. Check the AliExpress connection</a>
 <a class="b" href="/admin/discovery/run">3. Import products now</a>
 <a class="b" href="/admin/candidates">4. See import results</a>
+<a class="b" href="/console/suggestions">New product suggestions (approve before they go live)</a>
 <a class="b" href="/console/titles">Review new product titles (Rizz AI)</a>
 <a class="b" href="/admin/stripe/status">Check Stripe payments (test or live)</a>
 <form method="post" action="/admin/stripe/setup"><button type="submit">Connect Stripe payments (run after changing the key)</button></form>
@@ -137,4 +138,43 @@ consoleApp.post("/titles", requireAdmin, async (c) => {
   const changed = res.reduce((n, r) => n + (r.meta.changes ?? 0), 0);
   return c.html(page(`<h1>Saved</h1><p>${changed} product${changed === 1 ? "" : "s"} updated. Approved titles show on the store within a few minutes.</p>
 <a class="b" href="/console/titles">Review more</a><a class="b" href="/console/home">Back</a>`));
+});
+
+/** Products that passed the nightly checks wait here; nothing is imported until the owner approves it. */
+consoleApp.get("/suggestions", requireAdmin, async (c) => {
+  const { results } = await c.env.DB.prepare(
+    `SELECT aliexpress_product_id AS id, feed, rating, orders FROM ae_candidates WHERE status = 'passed' ORDER BY updated_at DESC LIMIT 100`,
+  ).all<{ id: string; feed: string | null; rating: number | null; orders: number | null }>();
+  const rows = results.map((r) => `<li style="margin:0 0 12px;padding:12px;border:1px solid #ddd;border-radius:12px;background:#fff">
+<a href="https://www.aliexpress.com/item/${r.id}.html" target="_blank" rel="noopener">View on AliExpress</a>
+<small> · ${r.rating ?? "?"}★ · ${r.orders ?? "?"} orders · ${r.feed ?? ""}</small>
+<p style="margin:8px 0 0"><label><input type="radio" name="do_${r.id}" value="add" style="width:auto"> Add to store</label>
+&nbsp; <label><input type="radio" name="do_${r.id}" value="skip" style="width:auto"> Skip</label>
+&nbsp; <label><input type="radio" name="do_${r.id}" value="later" checked style="width:auto"> Later</label></p></li>`).join("");
+  return c.html(page(`<h1>Product suggestions</h1>
+<p>These passed the checks (4.7★+, low delivery cost, under A$${(Number(c.env.DISCOVERY_MAX_PRICE_CENTS) || 6000) / 100}, no risky types). Nothing goes live until you add it.</p>
+${results.length ? `<form method="post"><ul style="padding:0;list-style:none">${rows}</ul><button type="submit">Save</button></form>` : "<p>No suggestions waiting.</p>"}
+<a class="b" href="/console/home">Back</a>`));
+});
+
+consoleApp.post("/suggestions", requireAdmin, async (c) => {
+  const form = await c.req.parseBody();
+  const t = now();
+  const add: string[] = [];
+  const stmts: D1PreparedStatement[] = [];
+  for (const [key, value] of Object.entries(form)) {
+    const m = key.match(/^do_(\d{6,20})$/);
+    if (!m) continue;
+    if (value === "add") {
+      add.push(m[1]!);
+      stmts.push(c.env.DB.prepare(`INSERT OR IGNORE INTO import_queue (aliexpress_product_id, requested_at) VALUES (?, ?)`).bind(m[1], t));
+      stmts.push(c.env.DB.prepare(`UPDATE ae_candidates SET status = 'imported', updated_at = ? WHERE aliexpress_product_id = ?`).bind(t, m[1]));
+    } else if (value === "skip") {
+      stmts.push(c.env.DB.prepare(`UPDATE ae_candidates SET status = 'rejected', reason = 'skipped by owner', updated_at = ? WHERE aliexpress_product_id = ?`).bind(t, m[1]));
+    }
+  }
+  if (stmts.length) await c.env.DB.batch(stmts);
+  if (add.length) await c.env.JOBS.sendBatch(add.map((id) => ({ body: { type: "ingest-product" as const, aeProductId: id } })));
+  return c.html(page(`<h1>Saved</h1><p>${add.length} product${add.length === 1 ? "" : "s"} being added; they appear on the store within a few minutes.</p>
+<a class="b" href="/console/suggestions">Back to suggestions</a><a class="b" href="/console/home">Home</a>`));
 });

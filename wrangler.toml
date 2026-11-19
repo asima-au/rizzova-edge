@@ -30,7 +30,8 @@ DISCOVERY_MIN_ORDERS = "100"
 DISCOVERY_MAX_SHIP_CENTS = "300" # supplier delivery per country, store currency (owner rule: about $3)
 DISCOVERY_COUNTRIES = "AU,US,AE"
 DISCOVERY_DAILY_LIMIT = "10"     # most products auto-imported per 24 hours
-AUTO_IMPORT = "on"               # "off" = vetted products wait for POST /admin/candidates/approve
+DISCOVERY_MAX_PRICE_CENTS = "6000" # store price cap for suggestions (owner rule: no high-value items)
+AUTO_IMPORT = "off"              # owner approves suggestions at /console/suggestions; "on" imports up to the daily limit
 
 # Secrets (set with `wrangler secret put NAME`, never in this file):
 #   AE_APP_KEY, AE_APP_SECRET, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET,
