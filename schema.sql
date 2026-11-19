@@ -204,3 +204,7 @@ CREATE TABLE IF NOT EXISTS product_copy (
   updated_at   INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_product_copy_status ON product_copy(status);
+
+-- Candidate title and estimated retail price, saved when vetted (for picking).
+-- ALTER TABLE ae_candidates ADD COLUMN title TEXT;
+-- ALTER TABLE ae_candidates ADD COLUMN retail_cents INTEGER;

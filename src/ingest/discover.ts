@@ -205,6 +205,6 @@ export async function vetCandidate(env: Env, token: string, aeProductId: string)
     }
   }
   await env.DB.prepare(
-    `UPDATE ae_candidates SET status = ?, rating = ?, orders = ?, shipping_json = ?, ship_countries = ?, reason = ?, updated_at = ? WHERE aliexpress_product_id = ?`,
-  ).bind(status, rating, orders, JSON.stringify(shipping), reachable.length ? reachable.join(",") : null, reasons.join("; ") || null, now(), aeProductId).run();
+    `UPDATE ae_candidates SET status = ?, rating = ?, orders = ?, shipping_json = ?, ship_countries = ?, reason = ?, title = ?, retail_cents = ?, updated_at = ? WHERE aliexpress_product_id = ?`,
+  ).bind(status, rating, orders, JSON.stringify(shipping), reachable.length ? reachable.join(",") : null, reasons.join("; ") || null, title.slice(0, 300) || null, retailCents, now(), aeProductId).run();
 }
