@@ -1,3 +1,4 @@
+import { classifyTitle } from "../lib/classify";
 import type { Env } from "../env";
 import { getDsProduct, list, type DsProduct, type DsSku } from "../aliexpress/dropshipper";
 import { imageIdFor, uploadImageFromUrl } from "./images";
@@ -89,6 +90,9 @@ export async function ingestProduct(env: Env, token: string, aeProductId: string
          last_synced_at=excluded.last_synced_at, sync_error=NULL, updated_at=excluded.updated_at`,
     ).bind(aeProductId, title, sanitizeHtml(base.detail), slugify(title, aeProductId), live ? "active" : "unavailable", env.STORE_CURRENCY, featureId, run),
   );
+
+  // One department per product; set once so a manual move is never undone by a re-sync.
+  stmts.push(env.DB.prepare(`UPDATE products SET category_id = ? WHERE aliexpress_product_id = ? AND category_id IS NULL`).bind(classifyTitle(title), aeProductId));
 
   for (const v of variants) {
     stmts.push(

@@ -24,6 +24,7 @@ export interface Product {
   shipCountries?: string[];
   currency: string;
   category: string;
+  categoryId?: number | null;
   images: string[];
   variants: Variant[];
   specs: Spec[];

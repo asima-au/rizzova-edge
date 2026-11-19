@@ -3,16 +3,18 @@ import { PromoBanners } from "@/components/retail/promo-banners";
 import { ProductRow } from "@/components/retail/product-row";
 import { ProductGrid } from "@/components/product-grid";
 import { getProduct, listProducts, previewSource } from "@/lib/catalog";
+import { departmentBySlug } from "@/lib/departments";
 import christmasPicks from "@/lib/christmas-picks.json";
 import type { Product } from "@/lib/types";
 
 const withImage = (p: Product) => p.images.length > 0 && p.variants.some((v) => v.stock > 0);
 
 
-export default async function HomePage({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
-  const { q } = await searchParams;
+export default async function HomePage({ searchParams }: { searchParams: Promise<{ q?: string | string[]; dept?: string | string[] }> }) {
+  const { q, dept } = await searchParams;
   const query = typeof q === "string" ? q.slice(0, 80) : undefined;
-  const [products, source] = await Promise.all([listProducts(query), previewSource()]);
+  const department = !query && typeof dept === "string" ? departmentBySlug(dept) : undefined;
+  const [products, source] = await Promise.all([listProducts(query, department?.id), previewSource()]);
 
   const banner = source && (
     <p role="status" className="container-x pt-4">
@@ -23,6 +25,18 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       </span>
     </p>
   );
+
+  if (department) {
+    return (
+      <>
+        {banner}
+        <div className="container-x space-y-8 pt-10">
+          <h1 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl">{department.name}</h1>
+          <ProductGrid products={products.filter((p) => p.categoryId === department.id)} label={department.name} />
+        </div>
+      </>
+    );
+  }
 
   if (query) {
     return (
