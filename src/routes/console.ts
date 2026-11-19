@@ -7,7 +7,7 @@ import { requireAdmin, ADMIN_COOKIE } from "./admin";
 /** Owner console: sign in once with the admin password, then use buttons instead of hand-edited links. */
 export const consoleApp = new Hono<{ Bindings: Env }>();
 
-const page = (body: string) => `<!doctype html><html lang="en"><head><meta charset="utf-8">
+export const page = (body: string) => `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Rizzova admin</title>
 <style>body{font-family:system-ui,sans-serif;max-width:440px;margin:48px auto;padding:0 16px;background:#faf8fc;color:#241534}
 h1{font-size:22px}a.b,button{display:block;width:100%;box-sizing:border-box;margin:10px 0;padding:14px;border:0;border-radius:10px;
@@ -35,6 +35,7 @@ consoleApp.get("/home", requireAdmin, (c) => c.html(page(`<h1>Rizzova admin</h1>
 <a class="b" href="/oauth/aliexpress/health">2. Check the AliExpress connection</a>
 <a class="b" href="/admin/discovery/run">3. Import products now</a>
 <a class="b" href="/admin/candidates">4. See import results</a>
+<a class="b" href="/console/dashboard" style="background:#c9a14a;color:#241534">Master dashboard</a>
 <a class="b" href="/console/suggestions">New product suggestions (approve before they go live)</a>
 <a class="b" href="/console/titles">Review new product titles (Rizz AI)</a>
 <a class="b" href="/admin/stripe/status">Check Stripe payments (test or live)</a>
