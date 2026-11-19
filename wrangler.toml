@@ -27,13 +27,13 @@ DISCOVERY_FEEDS = "DS_Winter-must-haves,DS_NewYear'sEveEssentials,home_ZA topsel
 DISCOVERY_PER_FEED = "50"
 # Best-seller keyword searches every night (top 100 by orders each), plus any typed on /console/suggestions.
 DISCOVERY_KEYWORDS = "christmas gift,stocking stuffer,pet bed,dog toy,cat toy,kids puzzle,plush toy,fidget toy,kitchen gadget,home organizer,desk organizer,night light,wall decor,travel organizer,car organizer,baby play mat,water bottle,lunch box,candle,gift box"
-DISCOVERY_MIN_RATING = "4.7"     # product rating (owner standard: 4.7–5 stars)
+DISCOVERY_MIN_RATING = "4.5"     # product rating floor; 4.5 allowed when demand is high (owner, Nov 2026)
 DISCOVERY_MIN_STORE_RATING = "4.6" # each of the store's three ratings
 DISCOVERY_MIN_ORDERS = "100"
 DISCOVERY_MAX_SHIP_CENTS = "500" # supplier delivery per country, store currency (owner rule since 20 Nov 2026: up to A$5)
 DISCOVERY_COUNTRIES = "AU,US,AE"   # AU must be reachable within the cost limit; US/AE optional per product
 DISCOVERY_DAILY_LIMIT = "10"     # most products auto-imported per 24 hours
-DISCOVERY_MAX_PRICE_CENTS = "6000" # store price cap for suggestions (owner rule: no high-value items)
+DISCOVERY_MAX_PRICE_CENTS = "8000" # store price cap A$80 (owner: careful, not over-protective)
 AUTO_IMPORT = "off"              # owner approves suggestions at /console/suggestions; "on" imports up to the daily limit
 
 # Secrets (set with `wrangler secret put NAME`, never in this file):
