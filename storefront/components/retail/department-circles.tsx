@@ -12,7 +12,7 @@ export function DepartmentCircles({ products }: { products: Product[] }) {
           return (
             <li key={d.name} className="w-24 shrink-0 sm:w-auto">
               <Link href={d.href} className="group block text-center">
-                <span className="mx-auto grid aspect-square w-full max-w-36 place-items-center overflow-hidden rounded-full bg-[var(--color-ink-2)] ring-1 ring-black/5 transition group-hover:ring-2 group-hover:ring-[var(--color-accent)]">
+                <span className="mx-auto grid aspect-square w-full max-w-36 place-items-center overflow-hidden rounded-full bg-white ring-1 ring-black/10 transition group-hover:ring-2 group-hover:ring-[var(--color-accent)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={image ?? "/brand/logo-mark.png"}

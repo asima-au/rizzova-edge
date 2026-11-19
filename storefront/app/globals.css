@@ -2,17 +2,18 @@
 
 /* Design tokens: dark glass surfaces + neo-brutalist accents. Mirrored for JS motion in lib/tokens.ts. */
 @theme {
-  /* Brand theme: olive page, plum header and bars, logo gold for actions; ivory cards carry plum text. */
-  --color-ink: #556b2f;         /* olive page background */
-  --color-ink-2: #f7f3e8;       /* ivory panels and cards */
-  --color-fg: #f7f3e8;          /* ivory text on olive */
-  --color-muted: #dcd5bf;
+  /* Brand theme: cream page, plum header and type, logo gold for actions, olive as a small accent. */
+  --color-ink: #f7f2e8;         /* warm cream page background */
+  --color-ink-2: #ffffff;       /* cards and panels */
+  --color-fg: #2a1645;          /* plum text */
+  --color-muted: #6b5d7d;
   --color-accent: #c9a14a;      /* logo gold: primary actions */
   --color-accent-ink: #241534;  /* plum text on gold */
-  --color-plum: #2a1645;        /* notice bar, menu, banners */
-  --color-signal: #b8ecd2;      /* positive: savings, in stock */
-  --color-warn: #ffd98a;
-  --color-danger: #ffb0a6;
+  --color-plum: #2a1645;        /* header, menu, banners */
+  --color-olive: #5b6b3a;       /* accent banner and badges */
+  --color-signal: #4f6b2c;      /* olive accent: in stock, savings */
+  --color-warn: #8a5a00;
+  --color-danger: #b03a2e;
 
   --font-display: var(--font-lora), Georgia, serif;
   --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
@@ -39,7 +40,7 @@
   border: 1px solid rgb(36 21 52 / 0.12);
   --color-fg: #241534;
   --color-muted: #6e6280;
-  --color-signal: #1f7a5e;
+  --color-signal: #4f6b2c;
   --color-warn: #8a5a00;
   --color-danger: #b03a2e;
   color: var(--color-fg);
@@ -65,7 +66,7 @@
   &:disabled { opacity: 0.45; transform: none; cursor: not-allowed; }
 }
 
-html { color-scheme: dark; }
+html { color-scheme: light; }
 body {
   background: var(--color-ink);
   color: var(--color-fg);

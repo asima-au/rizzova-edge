@@ -4,6 +4,7 @@ import { Lora, Nunito_Sans } from "next/font/google";
 import { CartProvider } from "@/context/cart-context";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { ContactButton } from "@/components/contact-button";
 import "./globals.css";
 
 // Boutique pairing: Lora (warm serif, echoes the logo) for headings, Nunito Sans for text and prices.
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             {children}
           </main>
           <SiteFooter />
+          <ContactButton />
         </CartProvider>
       </body>
     </html>

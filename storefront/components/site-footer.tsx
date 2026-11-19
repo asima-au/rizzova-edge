@@ -31,7 +31,7 @@ export function SiteFooter() {
           </ul>
         </nav>
       </div>
-      <p className="container-x pb-8 text-xs text-[var(--color-muted)]">© 2026 Rizzova · ABN {STORE.abn} · {STORE.email}</p>
+      <p className="container-x pb-8 text-xs text-[var(--color-muted)]">© 2026 Rizzova · ABN {STORE.abn} · <a href={`mailto:${STORE.email}`} className="underline-offset-2 hover:underline">{STORE.email}</a> · <a href={`https://wa.me/${STORE.phoneHref.replace(/\D/g, "")}`} target="_blank" rel="noopener" className="underline-offset-2 hover:underline">WhatsApp {STORE.phone}</a></p>
     </footer>
   );
 }
