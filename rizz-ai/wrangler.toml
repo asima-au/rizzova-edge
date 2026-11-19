@@ -15,8 +15,8 @@ binding = "AI"
 
 [vars]
 MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
-STORE_ORIGIN = "https://rizzova-storefront.rizzdigital.workers.dev"
-COPY_BATCH = "10"            # products written per cron run
+STORE_ORIGIN = "https://rizzova.com"
+COPY_BATCH = "25"            # products written per cron run
 SUPPORT_PER_HOUR = "20"      # support messages per visitor per hour
 
 # Secret: RIZZ_AI_TOKEN (Bearer token for the internal endpoints)

@@ -35,6 +35,7 @@ consoleApp.get("/home", requireAdmin, (c) => c.html(page(`<h1>Rizzova admin</h1>
 <a class="b" href="/oauth/aliexpress/health">2. Check the AliExpress connection</a>
 <a class="b" href="/admin/discovery/run">3. Import products now</a>
 <a class="b" href="/admin/candidates">4. See import results</a>
+<a class="b" href="/console/titles">Review new product titles (Rizz AI)</a>
 <a class="b" href="/admin/stripe/status">Check Stripe payments (test or live)</a>
 <form method="post" action="/admin/stripe/setup"><button type="submit">Connect Stripe payments (run after changing the key)</button></form>
 <form method="post" action="/console/legacy/match"><button type="submit">Find my old Hostinger products on AliExpress</button></form>
@@ -94,4 +95,46 @@ consoleApp.get("/legacy", requireAdmin, async (c) => {
   return c.html(page(`<h1>Old products</h1><p>${counts.map((r) => `${r.status}: <b>${r.n}</b>`).join(" · ")}</p>
 <ul style="padding-left:18px">${rows.map((r) => `<li><b>${r.status}</b> – ${esc(r.title)}${r.ae_product_id ? ` – <a href="https://www.aliexpress.com/item/${r.ae_product_id}.html" target="_blank" rel="noopener">AliExpress</a>` : ""}<br><small>${esc(r.note ?? "")}</small></li>`).join("")}</ul>
 <a class="b" href="/console/home">Back</a>`));
+});
+
+/** Rizz AI drafts (product_copy): original vs new title, editable, approve or reject. Only approved copy shows on the store. */
+consoleApp.get("/titles", requireAdmin, async (c) => {
+  const { results } = await c.env.DB.prepare(
+    `SELECT pc.product_id AS id, p.title AS original, pc.title, pc.summary FROM product_copy pc JOIN products p ON p.id = pc.product_id
+     WHERE pc.status = 'draft' ORDER BY pc.updated_at DESC LIMIT 100`,
+  ).all<{ id: number; original: string; title: string; summary: string | null }>();
+  const { results: counts } = await c.env.DB.prepare(`SELECT status, COUNT(*) AS n FROM product_copy GROUP BY status`).all<{ status: string; n: number }>();
+  const esc = (v: string) => v.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]!);
+  const rows = results.map((r) => `<li style="margin:0 0 18px;padding:12px;border:1px solid #ddd;border-radius:12px;background:#fff">
+<small style="color:#6b5d7d">Was: ${esc(r.original)}</small>
+<input name="title_${r.id}" value="${esc(r.title)}" maxlength="120" style="margin-top:6px">
+${r.summary ? `<small>${esc(r.summary)}</small>` : ""}
+<p style="margin:8px 0 0"><label><input type="radio" name="do_${r.id}" value="approve" checked style="width:auto"> Approve</label>
+&nbsp; <label><input type="radio" name="do_${r.id}" value="reject" style="width:auto"> Reject</label>
+&nbsp; <label><input type="radio" name="do_${r.id}" value="later" style="width:auto"> Later</label></p></li>`).join("");
+  return c.html(page(`<h1>New product titles</h1>
+<p>${counts.map((r) => `${r.status}: <b>${r.n}</b>`).join(" · ") || "No drafts yet."} Rizz AI writes 25 more every 6 hours.</p>
+${results.length ? `<form method="post"><p>Edit any title, then save. Approved titles and descriptions replace the AliExpress ones on the store.</p><ul style="padding:0;list-style:none">${rows}</ul><button type="submit">Save</button></form>` : "<p>Nothing waiting for review.</p>"}
+<a class="b" href="/console/home">Back</a>`));
+});
+
+consoleApp.post("/titles", requireAdmin, async (c) => {
+  const form = await c.req.parseBody();
+  const t = now();
+  const stmts: D1PreparedStatement[] = [];
+  for (const [key, value] of Object.entries(form)) {
+    const m = key.match(/^do_(\d+)$/);
+    if (!m || value === "later") continue;
+    const id = Number(m[1]);
+    const title = String(form[`title_${id}`] ?? "").trim().slice(0, 120);
+    if (value === "approve" && title) {
+      stmts.push(c.env.DB.prepare(`UPDATE product_copy SET title = ?, status = 'approved', updated_at = ? WHERE product_id = ? AND status = 'draft'`).bind(title, t, id));
+    } else if (value === "reject") {
+      stmts.push(c.env.DB.prepare(`UPDATE product_copy SET status = 'rejected', updated_at = ? WHERE product_id = ? AND status = 'draft'`).bind(t, id));
+    }
+  }
+  const res = stmts.length ? await c.env.DB.batch(stmts) : [];
+  const changed = res.reduce((n, r) => n + (r.meta.changes ?? 0), 0);
+  return c.html(page(`<h1>Saved</h1><p>${changed} product${changed === 1 ? "" : "s"} updated. Approved titles show on the store within a few minutes.</p>
+<a class="b" href="/console/titles">Review more</a><a class="b" href="/console/home">Back</a>`));
 });

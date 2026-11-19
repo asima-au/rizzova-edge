@@ -18,6 +18,8 @@ export interface Product {
   slug: string;
   title: string;
   description: string | null;
+  /** Approved one-line summary (Rizz AI), used for meta descriptions. */
+  summary?: string | null;
   currency: string;
   category: string;
   images: string[];
