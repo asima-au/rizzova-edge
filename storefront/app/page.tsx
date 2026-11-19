@@ -2,7 +2,8 @@ import { DepartmentCircles } from "@/components/retail/department-circles";
 import { PromoBanners } from "@/components/retail/promo-banners";
 import { ProductRow } from "@/components/retail/product-row";
 import { ProductGrid } from "@/components/product-grid";
-import { listProducts, previewSource } from "@/lib/catalog";
+import { getProduct, listProducts, previewSource } from "@/lib/catalog";
+import christmasPicks from "@/lib/christmas-picks.json";
 import type { Product } from "@/lib/types";
 
 const withImage = (p: Product) => p.images.length > 0 && p.variants.some((v) => v.stock > 0);
@@ -36,17 +37,18 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   }
 
   const shown = products.filter(withImage);
-  const gifts = shown.filter((p) => /christmas|xmas|santa|gift|necklace|ring|jewel/i.test(p.title));
-  // Gift row first; "New arrivals" shows only what the gift row did not, so small catalogues never repeat.
-  const first = (gifts.length >= 2 ? gifts : shown).slice(0, 8);
+  // Owner-chosen Christmas picks (lib/christmas-picks.json), in that order; sold-out or removed ones drop out.
+  const picks = (await Promise.all((christmasPicks as string[]).map((slug) => getProduct(slug)))).filter((p): p is Product => !!p && withImage(p));
+  const first = picks.length >= 4 ? picks : shown.slice(0, 8);
+  const pickedIds = new Set(first.map((p) => p.id));
 
   return (
     <div>
       {banner}
       <DepartmentCircles products={shown} />
       <PromoBanners />
-      <ProductRow title="Christmas gift ideas" products={first} />
-      <ProductRow id="new" title="New arrivals" products={shown.filter((p) => !first.includes(p)).slice(0, 12)} />
+      <ProductRow id="gifts" title="Top 10 Christmas gifts" products={first} />
+      <ProductRow id="new" title="New arrivals" products={shown.filter((p) => !pickedIds.has(p.id)).slice(0, 12)} />
     </div>
   );
 }

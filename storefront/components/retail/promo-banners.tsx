@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const BANNERS = [
-  { kicker: "Christmas Gift Shop", title: "Gifts they'll actually love", note: "Order by 3 December for Christmas delivery", href: "/?q=christmas", cta: "Shop gifts", tone: "plum" },
+  { kicker: "Christmas Gift Shop", title: "Gifts they'll actually love", note: "Order by 3 December for Christmas delivery", href: "/#gifts", cta: "Shop the top 10", tone: "plum" },
   { kicker: "Free delivery", title: "Free shipping to Australia & the US", note: "Tracked delivery in 2–3 weeks. UAE A$5.", href: "/shipping", cta: "Delivery info", tone: "gold" },
   { kicker: "New this week", title: "Fresh finds for home, pets & kids", note: "Hand-picked, top-rated products", href: "#new", cta: "See what's new", tone: "olive" },
 ] as const;
