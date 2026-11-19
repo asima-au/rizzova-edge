@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import legacy from "@/lib/legacy-redirects.json";
+import { SITE_URL } from "@/lib/site";
 import { MediaGallery, type MediaItem } from "@/components/pdp/media-gallery";
 import { ProductExperience } from "@/components/pdp/product-experience";
 import { SpecPanel } from "@/components/pdp/spec-panel";
@@ -10,7 +11,18 @@ type Params = Promise<{ slug: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const product = await getProduct((await params).slug);
-  return product ? { title: product.title, description: product.description ?? undefined } : { title: "Not found" };
+  if (!product) return { title: "Not found", robots: { index: false } };
+  // Meta description: the approved one-line summary, else the start of the description as plain text (~155 characters).
+  const plain = (product.summary || (product.description ?? "").replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+  const base = plain || `Shop ${product.title} at Rizzova. Free delivery to Australia and the US, A$5 to the UAE.`;
+  const description = base.length > 155 ? `${base.slice(0, 152).replace(/\s+\S*$/, "")}…` : base;
+  const url = `/product/${product.slug}`;
+  return {
+    title: product.title.length > 60 ? product.title.slice(0, 58).replace(/\s+\S*$/, "") : product.title,
+    description: description || undefined,
+    alternates: { canonical: url },
+    openGraph: { type: "website", url, title: product.title, description: description || undefined, images: product.images.slice(0, 1) },
+  };
 }
 
 export default async function ProductPage({ params }: { params: Params }) {
@@ -33,7 +45,9 @@ export default async function ProductPage({ params }: { params: Params }) {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.title,
-    description: product.description ?? undefined,
+    description: (product.summary || (product.description ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 500)) || undefined,
+    url: `${SITE_URL}/product/${product.slug}`,
+    brand: { "@type": "Brand", name: "Rizzova" },
     sku: product.variants[0]?.sku,
     image: product.images,
     offers: {
@@ -43,6 +57,19 @@ export default async function ProductPage({ params }: { params: Params }) {
       highPrice: Math.max(...prices).toFixed(2),
       offerCount: product.variants.length,
       availability: product.variants.some((v) => v.stock > 0) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      // Matches lib/shipping.ts and the refunds policy: free to AU/US, A$5 to the UAE, 2–3 weeks; no change-of-mind returns.
+      shippingDetails: (["AU", "US", "AE"] as const).map((country) => ({
+        "@type": "OfferShippingDetails",
+        shippingDestination: { "@type": "DefinedRegion", addressCountry: country },
+        shippingRate: { "@type": "MonetaryAmount", value: country === "AE" ? 5 : 0, currency: "AUD" },
+        deliveryTime: { "@type": "ShippingDeliveryTime", transitTime: { "@type": "QuantitativeValue", minValue: 14, maxValue: 21, unitCode: "DAY" } },
+      })),
+      hasMerchantReturnPolicy: {
+        "@type": "MerchantReturnPolicy",
+        applicableCountry: ["AU", "US", "AE"],
+        returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+        url: `${SITE_URL}/refunds`,
+      },
     },
   };
 
@@ -75,10 +102,17 @@ export default async function ProductPage({ params }: { params: Params }) {
           </summary>
           <div
             className="mt-4 max-w-3xl text-[var(--color-muted)] [&_*]:!bg-transparent [&_*]:!font-[family-name:var(--font-sans)] [&_*]:!text-inherit [&_img]:mx-auto [&_img]:my-3 [&_img]:!h-auto [&_img]:max-h-[420px] [&_img]:!w-auto [&_img]:max-w-full [&_img]:rounded-xl [&_img]:object-contain"
-            dangerouslySetInnerHTML={{ __html: product.description }}
+            dangerouslySetInnerHTML={{ __html: asHtml(product.description) }}
           />
         </details>
       )}
     </article>
   );
+}
+
+/** Approved Rizz AI copy is plain text with blank-line paragraphs; supplier copy is already (sanitised) HTML. */
+function asHtml(text: string): string {
+  if (/<[a-z][\s\S]*>/i.test(text)) return text;
+  const esc = (v: string) => v.replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]!);
+  return text.split(/\n{2,}/).map((para) => `<p>${esc(para.trim()).replace(/\n/g, "<br>")}</p>`).join("");
 }

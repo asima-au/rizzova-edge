@@ -23,6 +23,7 @@ export interface Env {
   DISCOVERY_COUNTRIES: string;
   DISCOVERY_DAILY_LIMIT: string;
   AUTO_IMPORT: string;
+  DISCOVERY_MAX_PRICE_CENTS: string;
 
   // Secrets
   AE_APP_KEY: string;

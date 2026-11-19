@@ -57,7 +57,14 @@ const settings = (env: Env) => ({
   countries: (env.DISCOVERY_COUNTRIES || "AU,US,AE").split(",").map((s) => s.trim()).filter(Boolean),
   dailyLimit: Number(env.DISCOVERY_DAILY_LIMIT) || 10,
   autoImport: env.AUTO_IMPORT === "on",
+  maxPriceCents: Number(env.DISCOVERY_MAX_PRICE_CENTS) || 6000,
 });
+
+/**
+ * Owner rule (20 Nov 2026): no risky or high-value items that make returns a headache.
+ * Weapons and hunting gear, footwear and sized clothing, higher-value electronics, batteries and cosmetics are skipped.
+ */
+const BLOCKED = /\b(rifle|gun|pistol|airsoft|hunting|knife|knives|dagger|sword|taser|crossbow|ammo|scope|shoes?|boots?|sneakers?|heels|sandals?|dress|jeans|pants|trousers|shirt|jacket|coat|lingerie|bra|amplifier|dac|headphones?|earbuds|speaker|camera|drone|projector|smart ?watch|tablet|laptop|power ?bank|battery|batteries|lithium|vape|e-?cig|perfume|cosmetic|makeup|serum|cream|supplement|medicine|tattoo)\b/i;
 
 /** Cron step: pull feed ids, store unseen ones, queue them for vetting. */
 export async function discoverFromFeeds(env: Env, token: string): Promise<{ found: number; queued: number }> {
@@ -122,6 +129,14 @@ export async function vetCandidate(env: Env, token: string, aeProductId: string)
   const skuId = first(ds, ["sku_id"]);
 
   const reasons: string[] = [];
+  const title = String(first(ds, ["subject"]) ?? "");
+  const blocked = title.match(BLOCKED);
+  if (blocked) reasons.push(`blocked type: ${blocked[0].toLowerCase()}`);
+  // Retail is cost x PRICE_MARKUP; compare the cheapest variant's retail with the cap.
+  const costs = findAll(ds, "offer_sale_price").map(num).filter((v): v is number => v !== null);
+  const retailCents = costs.length ? Math.round(Math.min(...costs) * 100 * (Number(env.PRICE_MARKUP) || 2)) : null;
+  if (retailCents === null) reasons.push("no price");
+  else if (retailCents > s.maxPriceCents) reasons.push(`retail about A$${(retailCents / 100).toFixed(0)} is over the A$${s.maxPriceCents / 100} cap`);
   if (rating === null) reasons.push("no rating");
   else if (rating < s.minRating) reasons.push(`rating ${rating}`);
   if (orders === null) reasons.push("no order count");
