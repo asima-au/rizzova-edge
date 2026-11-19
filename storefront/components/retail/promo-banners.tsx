@@ -19,8 +19,8 @@ export function PromoBanners() {
       {BANNERS.map((b) => (
         <Link key={b.kicker} href={b.href} className={`group flex min-h-48 flex-col justify-between rounded-[var(--radius-panel)] p-6 transition hover:-translate-y-0.5 ${TONES[b.tone]}`}>
           <span>
-            <span className="text-xs font-bold uppercase tracking-[0.18em] opacity-80">{b.kicker}</span>
-            <span className="mt-2 block font-[family-name:var(--font-display)] text-2xl leading-tight">{b.title}</span>
+            <span className="text-sm font-semibold opacity-80">{b.kicker}</span>
+            <span className="mt-1 block font-[family-name:var(--font-display)] text-[26px] font-semibold leading-tight">{b.title}</span>
             <span className="mt-2 block text-sm opacity-80">{b.note}</span>
           </span>
           <span className="mt-4 font-semibold underline underline-offset-4 group-hover:no-underline">{b.cta} →</span>

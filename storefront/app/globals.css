@@ -14,11 +14,11 @@
   --color-warn: #ffd98a;
   --color-danger: #ffb0a6;
 
-  --font-display: var(--font-unbounded), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
-  --font-poster: var(--font-anton), "Arial Narrow", Impact, sans-serif;
-  --font-serif: var(--font-iserif), Georgia, serif;
+  --font-display: var(--font-lora), Georgia, serif;
+  --font-sans: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-nunito), ui-sans-serif, system-ui, sans-serif;  /* prices: same friendly face, tabular figures below */
+  --font-poster: var(--font-lora), Georgia, serif;
+  --font-serif: var(--font-lora), Georgia, serif;
   --color-paper: #faf6ee;
   --color-paper-ink: #241534;
   --color-sage: #2a1645;
@@ -51,18 +51,18 @@
   --color-muted: #6e6280;
   color: var(--color-fg);
 }
-/* Primary action: heavy border + hard offset shadow that collapses on press. */
+/* Primary action: soft gold pill. (Name kept so existing buttons pick it up.) */
 @utility btn-brutal {
-  border: 2px solid var(--color-accent);
+  border: 1px solid var(--color-accent);
   background: var(--color-accent);
   color: var(--color-accent-ink);
-  box-shadow: var(--shadow-brutal);
-  border-radius: var(--radius-control);
+  border-radius: 999px;
   font-weight: 700;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
-  &:hover { transform: translate(-1px, -1px); box-shadow: 6px 6px 0 0 var(--color-fg); }
-  &:active { transform: translate(5px, 5px); box-shadow: none; }
-  &:disabled { opacity: 0.45; transform: none; box-shadow: none; cursor: not-allowed; }
+  box-shadow: 0 6px 16px -8px rgb(0 0 0 / 0.45);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+  &:hover { background: #d8b45f; transform: translateY(-1px); }
+  &:active { transform: translateY(0); }
+  &:disabled { opacity: 0.45; transform: none; cursor: not-allowed; }
 }
 
 html { color-scheme: dark; }
