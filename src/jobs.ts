@@ -12,7 +12,8 @@ export type Job =
   | { type: "fulfil-order"; orderId: string }
   | { type: "track-fulfilment"; fulfilmentId: number }
   | { type: "vet-candidate"; aeProductId: string }
-  | { type: "match-legacy"; wcId: number };
+  | { type: "match-legacy"; wcId: number }
+  | { type: "run-discovery" };
 
 const SYNC_BATCH = 200;
 
@@ -29,6 +30,7 @@ export async function handleQueue(batch: MessageBatch<Job>, env: Env): Promise<v
       else if (job.type === "track-fulfilment") await trackFulfilment(env, await getToken(), job.fulfilmentId);
       else if (job.type === "vet-candidate") await vetCandidate(env, await getToken(), job.aeProductId);
       else if (job.type === "match-legacy") await matchLegacy(env, await getToken(), job.wcId);
+      else if (job.type === "run-discovery") console.log("discovery", JSON.stringify(await discoverFromFeeds(env, await getToken())));
       msg.ack();
     } catch (err) {
       const message = (err as Error).message;
