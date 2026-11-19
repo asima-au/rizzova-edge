@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
+import legacy from "@/lib/legacy-redirects.json";
 import { MediaGallery, type MediaItem } from "@/components/pdp/media-gallery";
 import { ProductExperience } from "@/components/pdp/product-experience";
 import { SpecPanel } from "@/components/pdp/spec-panel";
@@ -13,8 +14,16 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 }
 
 export default async function ProductPage({ params }: { params: Params }) {
-  const product = await getProduct((await params).slug);
-  if (!product) notFound();
+  const { slug } = await params;
+  const product = await getProduct(slug);
+  if (!product) {
+    // Old rizzova.com (WooCommerce) product addresses: matched products move permanently, others go to a search.
+    const moved = (legacy as Record<string, string>)[slug];
+    if (moved) permanentRedirect(`/product/${moved}`);
+    const words = slug.split("-").filter((w) => /^[a-z]{3,}$/.test(w)).slice(0, 4).join(" ");
+    if (words) redirect(`/?q=${encodeURIComponent(words)}`);
+    notFound();
+  }
   const complements = await getComplements(product);
   const media: MediaItem[] = product.images.map((src, i) => ({ kind: "image", src, alt: `${product.title}, image ${i + 1}` }));
   const prices = product.variants.map((v) => v.priceCents / 100);
