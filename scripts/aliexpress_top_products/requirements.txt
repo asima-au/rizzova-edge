@@ -1,0 +1,2 @@
+# Optional: the script has a built-in .env reader and otherwise uses only the Python standard library.
+python-dotenv==1.0.1
