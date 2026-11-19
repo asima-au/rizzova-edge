@@ -3,7 +3,7 @@ import { POLICIES, STORE } from "@/lib/policies";
 
 export function SiteFooter() {
   return (
-    <footer className="mt-24 border-t border-white/10">
+    <footer className="mt-24 border-t border-black/10">
       <div className="container-x grid gap-8 py-12 sm:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)]">
         <div>
           <p className="flex items-center gap-2">

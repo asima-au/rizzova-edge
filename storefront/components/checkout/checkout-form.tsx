@@ -130,7 +130,7 @@ export function CheckoutForm() {
       <form onSubmit={submit} noValidate aria-labelledby="checkout-h" className="glass rounded-[var(--radius-panel)] p-6">
         <ol className="mb-6 flex gap-2" aria-label="Checkout progress">
           {STEPS.map((label, i) => (
-            <li key={label} aria-current={i === step ? "step" : undefined} className={`flex-1 rounded-[var(--radius-chip)] border-2 px-3 py-1.5 text-center text-xs font-semibold ${i === step ? "border-[var(--color-accent)] text-[var(--color-fg)]" : i < step ? "border-[var(--color-signal)]/50 text-[var(--color-signal)]" : "border-white/10 text-[var(--color-muted)]"}`}>
+            <li key={label} aria-current={i === step ? "step" : undefined} className={`flex-1 rounded-[var(--radius-chip)] border-2 px-3 py-1.5 text-center text-xs font-semibold ${i === step ? "border-[var(--color-accent)] text-[var(--color-fg)]" : i < step ? "border-[var(--color-signal)]/50 text-[var(--color-signal)]" : "border-black/10 text-[var(--color-muted)]"}`}>
               {i < step ? "✓ " : `${i + 1}. `}{label}
             </li>
           ))}
@@ -169,7 +169,7 @@ export function CheckoutForm() {
                 <fieldset className="grid min-w-0 gap-2 sm:col-span-2">
                   <legend className="mb-1 text-sm text-[var(--color-muted)]">Delivery</legend>
                   {options.map((o) => (
-                    <label key={o.id} className={`flex cursor-pointer items-center justify-between gap-3 rounded-2xl border-2 px-3 py-2.5 text-sm ${route.id === o.id ? "border-[var(--color-accent)]" : "border-white/10"}`}>
+                    <label key={o.id} className={`flex cursor-pointer items-center justify-between gap-3 rounded-2xl border-2 px-3 py-2.5 text-sm ${route.id === o.id ? "border-[var(--color-accent)]" : "border-black/10"}`}>
                       <span className="flex items-center gap-2.5">
                         <input type="radio" name="shippingMethod" value={o.id} checked={route.id === o.id} onChange={() => setMethod(o.id)} className="accent-[var(--color-accent)]" />
                         <span><span className="font-semibold">{o.label}</span> · {o.estimate}</span>
@@ -228,7 +228,7 @@ export function CheckoutForm() {
             </li>
           ))}
         </ul>
-        <dl className="mt-4 space-y-1.5 border-t border-white/10 pt-4 text-sm">
+        <dl className="mt-4 space-y-1.5 border-t border-black/10 pt-4 text-sm">
           <div className="flex justify-between"><dt>Subtotal</dt><dd className="font-[family-name:var(--font-mono)]">{formatMoney(totals.subtotalCents, CURRENCY)}</dd></div>
           {totals.bundleSavingsCents > 0 && <div className="flex justify-between text-[var(--color-signal)]"><dt>Bundle savings</dt><dd className="font-[family-name:var(--font-mono)]">−{formatMoney(totals.bundleSavingsCents, CURRENCY)}</dd></div>}
           <div className="flex justify-between"><dt>Shipping</dt><dd className="font-[family-name:var(--font-mono)]">{priceLabel(route.cents)}</dd></div>

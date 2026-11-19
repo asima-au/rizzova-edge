@@ -72,7 +72,7 @@ export function SmartBundler({ anchor, anchorVariant, complements }: Props) {
 
       <fieldset className="mt-4 min-w-0 space-y-2">
         <legend className="sr-only">Items to bundle with {anchor.title}</legend>
-        <div className="flex items-center justify-between rounded-2xl border border-white/10 px-3 py-2.5 text-sm">
+        <div className="flex items-center justify-between rounded-2xl border border-black/10 px-3 py-2.5 text-sm">
           <span className="min-w-0 truncate">This item · {variantLabel(anchorVariant)}</span>
           <span className="font-[family-name:var(--font-mono)]">{formatMoney(anchorVariant.priceCents, anchor.currency)}</span>
         </div>
@@ -82,7 +82,7 @@ export function SmartBundler({ anchor, anchorVariant, complements }: Props) {
           return (
             <label
               key={variant.id}
-              className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm transition-colors ${checked ? "border-[var(--color-accent)]/70 bg-[var(--color-accent)]/10" : "border-white/10 hover:border-white/30"} ${atLimit ? "cursor-not-allowed opacity-50" : ""}`}
+              className={`flex cursor-pointer items-center gap-3 rounded-2xl border px-3 py-2.5 text-sm transition-colors ${checked ? "border-[var(--color-accent)]/70 bg-[var(--color-accent)]/10" : "border-black/10 hover:border-black/30"} ${atLimit ? "cursor-not-allowed opacity-50" : ""}`}
             >
               <input type="checkbox" checked={checked} disabled={atLimit} onChange={() => toggle(variant.id)} className="size-4 accent-[var(--color-accent)]" />
               <span className="min-w-0 flex-1 truncate">{product.title}</span>

@@ -23,7 +23,7 @@ export function PolicyPage({ policy }: { policy: Policy }) {
         <p className="mt-5 font-[family-name:var(--font-serif)] text-2xl italic text-[var(--color-fg)]/85">{policy.intro}</p>
         <div className="mt-10 space-y-8">
           {policy.sections.map((s) => (
-            <section key={s.heading} className="border-t border-white/10 pt-6">
+            <section key={s.heading} className="border-t border-black/10 pt-6">
               <h2 className="text-lg font-semibold">{s.heading}</h2>
               {s.body.map((para, i) => <p key={i} className="mt-3 leading-relaxed text-[var(--color-fg)]/80">{para}</p>)}
             </section>

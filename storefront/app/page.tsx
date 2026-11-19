@@ -1,26 +1,12 @@
-import { BrandFilm } from "@/components/editorial/brand-film";
-import { ExploreTiles, tilesFrom } from "@/components/quiet/explore-tiles";
-import { FreshFinds } from "@/components/quiet/fresh-finds";
-import { DeliveryBand } from "@/components/quiet/delivery-band";
-import { HowItWorks } from "@/components/quiet/how-it-works";
-import { InsideTabs, type Shelf } from "@/components/quiet/inside-tabs";
-import { PicksCarousel } from "@/components/quiet/picks-carousel";
-import { HeroCollage } from "@/components/quiet/hero-collage";
+import { DepartmentCircles } from "@/components/retail/department-circles";
+import { PromoBanners } from "@/components/retail/promo-banners";
+import { ProductRow } from "@/components/retail/product-row";
 import { ProductGrid } from "@/components/product-grid";
 import { listProducts, previewSource } from "@/lib/catalog";
 import type { Product } from "@/lib/types";
 
 const withImage = (p: Product) => p.images.length > 0 && p.variants.some((v) => v.stock > 0);
 
-function shelves(products: Product[], n: number): Shelf[] {
-  const byCat = new Map<string, Product[]>();
-  for (const p of products) if (p.category) byCat.set(p.category, [...(byCat.get(p.category) ?? []), p]);
-  return [...byCat.entries()]
-    .filter(([, list]) => list.length >= 4)
-    .sort((a, b) => b[1].length - a[1].length)
-    .slice(0, n)
-    .map(([name, list]) => ({ name, products: list }));
-}
 
 export default async function HomePage({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
   const { q } = await searchParams;
@@ -50,32 +36,17 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   }
 
   const shown = products.filter(withImage);
-  // One product per category for the hero collage, so it shows the range.
-  const seen = new Set<string>();
-  const collage = shown.filter((p) => !/nee\s?doh/i.test(p.title) && !seen.has(p.category) && seen.add(p.category)).slice(0, 5);
-  const picks = shown.filter((p) => !collage.includes(p)).slice(0, 3);
-  const cats = shelves(shown, 5);
+  const gifts = shown.filter((p) => /christmas|xmas|santa|gift|necklace|ring|jewel/i.test(p.title));
+  // Gift row first; "New arrivals" shows only what the gift row did not, so small catalogues never repeat.
+  const first = (gifts.length >= 2 ? gifts : shown).slice(0, 8);
 
   return (
-    <div className="-mb-24">
+    <div>
       {banner}
-      <HeroCollage products={collage} />
-      <ExploreTiles tiles={tilesFrom(shown)} />
-      <FreshFinds products={shown.slice(3, 15)} />
-      {picks.length > 0 && <PicksCarousel products={picks} section={1} />}
-      <DeliveryBand section={2} />
-      {cats.length > 0 && <InsideTabs shelves={cats} section={3} />}
-      <HowItWorks section={4} />
-      <BrandFilm />
-      <section id="the-edit" aria-labelledby="edit-h" className="bg-[var(--color-ink)] py-24 text-[var(--color-fg)] sm:py-32">
-        <div className="container-x space-y-10">
-          <p className="border-b border-white/15 pb-4 font-[family-name:var(--font-mono)] text-xs uppercase tracking-[0.2em]">05 / Everything</p>
-          <h2 id="edit-h" className="font-[family-name:var(--font-serif)] leading-none" style={{ fontSize: "clamp(3rem, 7vw, 6rem)" }}>The edit.</h2>
-        </div>
-        <div className="container-x mt-10 rounded-[var(--radius-panel)] bg-[var(--color-ink)] p-4 text-[var(--color-fg)] sm:p-6">
-          <ProductGrid products={shown.slice(0, 24)} label="The edit" />
-        </div>
-      </section>
+      <DepartmentCircles products={shown} />
+      <PromoBanners />
+      <ProductRow title="Christmas gift ideas" products={first} />
+      <ProductRow id="new" title="New arrivals" products={shown.filter((p) => !first.includes(p)).slice(0, 12)} />
     </div>
   );
 }

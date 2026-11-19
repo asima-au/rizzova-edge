@@ -33,7 +33,7 @@ export function SpecPanel({ specs }: { specs: Spec[] }) {
             tabIndex={i === active ? 0 : -1}
             onClick={() => setActive(i)}
             onKeyDown={onKey}
-            className={`rounded-[var(--radius-chip)] border-2 px-3 py-1 text-sm transition-colors ${i === active ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-accent-ink)]" : "border-white/15 hover:border-white/40"}`}
+            className={`rounded-[var(--radius-chip)] border-2 px-3 py-1 text-sm transition-colors ${i === active ? "border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-accent-ink)]" : "border-black/15 hover:border-black/40"}`}
           >
             {g}
           </button>

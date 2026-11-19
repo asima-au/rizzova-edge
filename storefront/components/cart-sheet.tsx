@@ -109,7 +109,7 @@ export function CartSheet({ open, onClose }: { open: boolean; onClose: () => voi
             )}
 
             {lines.length > 0 && (
-              <div className="mt-4 space-y-2 border-t border-white/10 pt-4 text-sm">
+              <div className="mt-4 space-y-2 border-t border-black/10 pt-4 text-sm">
                 {totals.bundleSavingsCents > 0 && (
                   <div className="flex justify-between text-[var(--color-signal)]">
                     <span>Bundle savings</span>
