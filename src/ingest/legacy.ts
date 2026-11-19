@@ -35,6 +35,7 @@ export async function matchLegacy(env: Env, token: string, wcId: number): Promis
   const words = row.title.replace(/[|–—(].*$/, "").replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
   let keyWord = "";
   let candidates: string[] = [];
+  let lastReply = "";
   for (const n of [8, 5, 3]) {
     if (n < 8 && words.length <= n) break;
     keyWord = words.slice(0, n).join(" ");
@@ -43,8 +44,9 @@ export async function matchLegacy(env: Env, token: string, wcId: number): Promis
     });
     candidates = feedProductIds(payload).slice(0, MAX_CANDIDATES);
     if (candidates.length > 0) break;
+    lastReply = JSON.stringify(payload).slice(0, 180);
   }
-  if (candidates.length === 0) return void (await save("nomatch", null, null, `search found nothing for "${keyWord}"`));
+  if (candidates.length === 0) return void (await save("nomatch", null, null, `search found nothing for "${keyWord}": ${lastReply}`));
 
   let best: { id: string; score: number } | null = null;
   for (const id of candidates) {
