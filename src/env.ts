@@ -20,6 +20,7 @@ export interface Env {
   DISCOVERY_FEEDS: string;
   DISCOVERY_PER_FEED: string;
   DISCOVERY_MIN_RATING: string;
+  DISCOVERY_MIN_STORE_RATING: string;
   DISCOVERY_MIN_ORDERS: string;
   DISCOVERY_MAX_SHIP_CENTS: string;
   DISCOVERY_COUNTRIES: string;

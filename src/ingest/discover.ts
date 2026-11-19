@@ -52,6 +52,7 @@ const settings = (env: Env) => ({
   feeds: (env.DISCOVERY_FEEDS ?? "").split(",").map((s) => s.trim()).filter(Boolean),
   perFeed: Math.min(Number(env.DISCOVERY_PER_FEED) || 50, 200),
   minRating: Number(env.DISCOVERY_MIN_RATING) || 4.8,
+  minStoreRating: Number(env.DISCOVERY_MIN_STORE_RATING) || 4.6,
   minOrders: Number(env.DISCOVERY_MIN_ORDERS) || 100,
   maxShipCents: Number(env.DISCOVERY_MAX_SHIP_CENTS) || 300,
   countries: (env.DISCOVERY_COUNTRIES || "AU,US,AE").split(",").map((s) => s.trim()).filter(Boolean),
@@ -141,14 +142,19 @@ export async function vetCandidate(env: Env, token: string, aeProductId: string)
   else if (rating < s.minRating) reasons.push(`rating ${rating}`);
   if (orders === null) reasons.push("no order count");
   else if (orders < s.minOrders) reasons.push(`${orders} orders`);
-  if (storeRatings.some((r) => r < s.minRating)) reasons.push(`store ratings ${storeRatings.join("/")}`);
+  if (storeRatings.some((r) => r < s.minStoreRating)) reasons.push(`store ratings ${storeRatings.join("/")}`);
 
+  // Delivery: Australia is required; the US and UAE are optional. A product is sold only to the
+  // countries it reaches within the cost limit (checkout enforces products.ship_countries).
   const shipping: Record<string, number | null> = {};
+  const reachable: string[] = [];
   if (reasons.length === 0) {
     for (const c of s.countries) {
       shipping[c] = await cheapestShippingCents(env, token, aeProductId, skuId === undefined ? undefined : String(skuId), c).catch(() => null);
-      if (shipping[c] === null) reasons.push(`no delivery to ${c}`);
-      else if (shipping[c]! > s.maxShipCents) reasons.push(`${c} delivery ${shipping[c]}c`);
+      if (shipping[c] !== null && shipping[c]! <= s.maxShipCents) reachable.push(c);
+    }
+    if (!reachable.includes("AU")) {
+      reasons.push(shipping.AU === null || shipping.AU === undefined ? "no delivery to AU" : `AU delivery ${shipping.AU}c`);
     }
   }
 
@@ -164,6 +170,6 @@ export async function vetCandidate(env: Env, token: string, aeProductId: string)
     }
   }
   await env.DB.prepare(
-    `UPDATE ae_candidates SET status = ?, rating = ?, orders = ?, shipping_json = ?, reason = ?, updated_at = ? WHERE aliexpress_product_id = ?`,
-  ).bind(status, rating, orders, JSON.stringify(shipping), reasons.join("; ") || null, now(), aeProductId).run();
+    `UPDATE ae_candidates SET status = ?, rating = ?, orders = ?, shipping_json = ?, ship_countries = ?, reason = ?, updated_at = ? WHERE aliexpress_product_id = ?`,
+  ).bind(status, rating, orders, JSON.stringify(shipping), reachable.length ? reachable.join(",") : null, reasons.join("; ") || null, now(), aeProductId).run();
 }

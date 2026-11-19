@@ -17,7 +17,7 @@ interface ApiVariant {
   id: number; sku: string; price_cents: number; compare_at_price_cents: number | null; stock_qty: number; attributes: Record<string, string>;
 }
 interface ApiDetail {
-  id: number; slug: string; title: string; description: string | null; summary?: string | null; currency: string;
+  id: number; slug: string; title: string; description: string | null; summary?: string | null; ship_countries?: string | null; currency: string;
   variants: ApiVariant[]; images: { url: string; variantId: number | null; feature: boolean }[];
 }
 
@@ -39,7 +39,7 @@ function fromApi(d: ApiDetail): Product {
     id: v.id, sku: v.sku, priceCents: v.price_cents, compareAtCents: v.compare_at_price_cents, stock: v.stock_qty, attributes: v.attributes,
   }));
   return {
-    id: d.id, slug: d.slug, title: d.title, description: d.description, summary: d.summary ?? null, currency: d.currency, category: "",
+    id: d.id, slug: d.slug, title: d.title, description: d.description, summary: d.summary ?? null, shipCountries: d.ship_countries ? d.ship_countries.split(",") : [], currency: d.currency, category: "",
     images: d.images.filter((i) => i.variantId === null).map((i) => i.url), variants, specs: specsFromVariants(variants), isSample: false,
   };
 }

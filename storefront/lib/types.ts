@@ -20,6 +20,8 @@ export interface Product {
   description: string | null;
   /** Approved one-line summary (Rizz AI), used for meta descriptions. */
   summary?: string | null;
+  /** Countries the supplier delivers to, e.g. ["AU"]; empty or missing = all store countries. */
+  shipCountries?: string[];
   currency: string;
   category: string;
   images: string[];
