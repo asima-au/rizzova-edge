@@ -18,7 +18,7 @@ STORE_CURRENCY = "AUD"
 STORE_LANGUAGE = "en"
 PRICE_MARKUP = "2.2"            # retail = AliExpress cost x markup, rounded to .99
 COMPARE_AT_MARKUP = "1.3"       # compare-at = retail x this (0 disables)
-PUBLIC_SITE_URL = "https://rizzova-storefront.rizzdigital.workers.dev"
+PUBLIC_SITE_URL = "https://rizzova.com"
 CF_IMAGES_ACCOUNT_HASH = ""   # empty = no Cloudflare Images; product photos are served from the supplier CDN
 CHECKOUT_COUNTRIES = "AU,US,AE"
 AUTO_FULFIL = "off"            # "on" = paid live orders are placed on AliExpress automatically

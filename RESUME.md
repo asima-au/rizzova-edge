@@ -86,8 +86,10 @@ Env for wrangler: `CLOUDFLARE_API_TOKEN=proxy-injected CLOUDFLARE_ACCOUNT_ID=bee
    Products must also be checked with `ds.freight.query` for each country before import.
    Owner rule (24 Oct 2026): supplier shipping up to about $3 per order is fine; the margin absorbs it and delivery stays free to AU/US.
 4. Stripe: LIVE since 19 Nov 2026 (restricted key `rk_live_` in STRIPE_SECRET_KEY, live webhook created via console button, secret in KV). Statement descriptor RIZZOVA.COM.
-5. Storefront points at the backend (`RIZZOVA_API_URL` var in both storefront wrangler files, 19 Nov 2026). Next: live Stripe keys, then take real orders.
-6. Hostinger WooCommerce shop stays live until then (paid until 20 Aug 2027).
+5. LIVE: rizzova.com and www.rizzova.com are Worker custom domains on `rizzova-storefront` (19 Nov 2026). Backend PUBLIC_SITE_URL = https://rizzova.com.
+   Old WooCommerce links redirect (`storefront/lib/legacy-redirects.json`, `next.config.ts`).
+   ROLLBACK to Hostinger: remove the two Worker custom domains, then add DNS `A rizzova.com 5.183.10.242` (proxied) and `CNAME www -> rizzova.com` (proxied), and set PUBLIC_SITE_URL back.
+6. Hostinger no longer receives traffic. Before deleting it: export WooCommerce orders/customers and the digital product files.
 
 ## Owner preferences
 - Owner name appears only on her CV. Use "Rizz" everywhere else.
