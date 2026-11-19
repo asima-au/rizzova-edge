@@ -85,7 +85,7 @@ Env for wrangler: `CLOUDFLARE_API_TOKEN=proxy-injected CLOUDFLARE_ACCOUNT_ID=bee
    Products must also be checked with `ds.freight.query` for each country before import.
    Owner rule (24 Oct 2026): supplier shipping up to about $3 per order is fine; the margin absorbs it and delivery stays free to AU/US.
 4. Stripe: done in test mode (key set by owner, webhook created by `/admin/stripe/setup`, secret in KV).
-5. Point the storefront at the backend (`RIZZOVA_API_URL`), then take real orders.
+5. Storefront points at the backend (`RIZZOVA_API_URL` var in both storefront wrangler files, 19 Nov 2026). Next: live Stripe keys, then take real orders.
 6. Hostinger WooCommerce shop stays live until then (paid until 20 Aug 2027).
 
 ## Owner preferences

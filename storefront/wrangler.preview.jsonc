@@ -7,5 +7,6 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "kv_namespaces": [{ "binding": "STATIC", "id": "19eb8b5e7b85446299f0024ebb558acf" }],
   "workers_dev": true,
+  "vars": { "RIZZOVA_API_URL": "https://rizzova-edge.rizzdigital.workers.dev" },
   "observability": { "enabled": true }
 }
