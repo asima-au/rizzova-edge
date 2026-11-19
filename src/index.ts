@@ -9,6 +9,7 @@ import { products } from "./routes/products";
 import { cart } from "./routes/cart";
 import { checkout } from "./routes/checkout";
 import { stripeWebhook } from "./routes/stripe";
+import { reelFeed } from "./routes/reel-feed";
 import { consoleApp } from "./routes/console";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -19,6 +20,7 @@ app.route("/oauth", oauth);
 app.route("/admin", admin);
 app.route("/console", consoleApp);
 app.route("/api/products", products);
+app.route("/api/reel-feed", reelFeed);
 app.route("/api/cart", cart);
 app.route("/api/checkout", checkout);
 app.route("/webhooks/stripe", stripeWebhook);
