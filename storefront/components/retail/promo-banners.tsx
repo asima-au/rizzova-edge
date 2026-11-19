@@ -9,7 +9,7 @@ const BANNERS = [
 const TONES = {
   plum: "bg-[var(--color-plum)] text-white",
   gold: "bg-[var(--color-accent)] text-[var(--color-accent-ink)]",
-  ivory: "bg-[var(--color-ink-2)] text-[var(--color-fg)] ring-1 ring-black/5",
+  ivory: "bg-[var(--color-ink-2)] text-[#241534]",
 } as const;
 
 /** Three promo cards under the department row. */

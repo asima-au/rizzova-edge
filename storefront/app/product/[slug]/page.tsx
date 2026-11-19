@@ -56,7 +56,7 @@ export default async function ProductPage({ params }: { params: Params }) {
             product.isSample
               ? <p className="mt-3 text-[var(--color-muted)]">{product.description}</p>
               // Supplier HTML is sanitised by the ingestion Worker before it reaches D1.
-              : <div className="prose-invert mt-3 max-w-none text-[var(--color-muted)]" dangerouslySetInnerHTML={{ __html: product.description }} />
+              : <div className="mt-3 max-w-none text-[var(--color-muted)] [&_*]:!bg-transparent [&_*]:!font-[family-name:var(--font-sans)] [&_*]:!text-inherit [&_img]:my-3 [&_img]:rounded-xl" dangerouslySetInnerHTML={{ __html: product.description }} />
           )}
         </header>
         <ProductExperience product={product} complements={complements} />
