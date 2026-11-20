@@ -3,12 +3,12 @@ import { DEPARTMENTS } from "@/lib/departments";
 import type { Product } from "@/lib/types";
 
 /** Round department tiles, each showing a matching product photo (or the logo when none matches yet). */
-export function DepartmentCircles({ products }: { products: Product[] }) {
+export function DepartmentCircles({ products, photos = {} }: { products: Product[]; photos?: Record<string, string> }) {
   return (
     <section aria-label="Shop by department" className="container-x pt-8">
       <ul className="flex gap-5 overflow-x-auto pb-2 sm:grid sm:grid-cols-4 sm:gap-6 lg:grid-cols-9">
         {DEPARTMENTS.map((d) => {
-          const image = products.find((p) => (d.id ? p.categoryId === d.id : /christmas|santa|gift/i.test(p.title)) && p.images[0])?.images[0];
+          const image = photos[d.name] ?? products.find((p) => (d.id ? p.categoryId === d.id : /christmas|santa|gift/i.test(p.title)) && p.images[0])?.images[0];
           return (
             <li key={d.name} className="w-24 shrink-0 sm:w-auto">
               <Link href={d.href} className="group block text-center">

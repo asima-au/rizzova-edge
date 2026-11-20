@@ -5,6 +5,7 @@ import { ProductGrid } from "@/components/product-grid";
 import { getProduct, listProducts, previewSource } from "@/lib/catalog";
 import { departmentBySlug } from "@/lib/departments";
 import christmasPicks from "@/lib/christmas-picks.json";
+import departmentPhotos from "@/lib/department-photos.json";
 import type { Product } from "@/lib/types";
 
 const withImage = (p: Product) => p.images.length > 0 && p.variants.some((v) => v.stock > 0);
@@ -55,11 +56,14 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const picks = (await Promise.all((christmasPicks as string[]).map((slug) => getProduct(slug)))).filter((p): p is Product => !!p && withImage(p));
   const first = picks.length >= 4 ? picks : shown.slice(0, 8);
   const pickedIds = new Set(first.map((p) => p.id));
+  // Owner/Claude-chosen photo per department circle (lib/department-photos.json), so every circle has a product.
+  const photoEntries = await Promise.all(Object.entries(departmentPhotos as Record<string, string>).map(async ([name, slug]) => [name, (await getProduct(slug))?.images[0]] as const));
+  const photos = Object.fromEntries(photoEntries.filter((e): e is readonly [string, string] => !!e[1]));
 
   return (
     <div>
       {banner}
-      <DepartmentCircles products={shown} />
+      <DepartmentCircles products={shown} photos={photos} />
       <PromoBanners />
       <ProductRow id="gifts" title="Top 10 Christmas gifts" products={first} />
       <ProductRow id="new" title="New arrivals" products={shown.filter((p) => !pickedIds.has(p.id)).slice(0, 12)} />
