@@ -106,13 +106,22 @@ export async function discoverFromSearch(env: Env, token: string, keyword: strin
   const t = now();
   const ids: string[] = [];
   for (const pageIndex of [1, 2]) {
-    const payload = await callBusiness(env, "aliexpress.ds.text.search", token, {
-      keyWord: keyword, local: "en_US", countryCode: env.AE_SHIP_TO_COUNTRY, currency: env.STORE_CURRENCY,
-      sortBy: "orders,desc", pageSize: 50, pageIndex,
-    });
-    const page = feedProductIds(payload);
+    // AliExpress sometimes answers NGSELECTION_SEARCH_ERROR; retry with simpler parameter sets.
+    const attempts: Record<string, string | number>[] = [
+      { keyWord: keyword, local: "en_US", countryCode: env.AE_SHIP_TO_COUNTRY, currency: env.STORE_CURRENCY, sortBy: "orders,desc", pageSize: 50, pageIndex },
+      { keyWord: keyword, local: "en_US", countryCode: env.AE_SHIP_TO_COUNTRY, currency: env.STORE_CURRENCY, sortBy: "orders,desc", pageSize: 20, pageIndex },
+      { keyWord: keyword, local: "en_US", countryCode: "US", currency: "USD", sortBy: "orders,desc", pageSize: 20, pageIndex },
+      { keyWord: keyword, local: "en_US", countryCode: env.AE_SHIP_TO_COUNTRY, currency: env.STORE_CURRENCY, pageSize: 20, pageIndex },
+    ];
+    let page: string[] = [];
+    for (const [n, params] of attempts.entries()) {
+      const payload = await callBusiness(env, "aliexpress.ds.text.search", token, params);
+      page = feedProductIds(payload);
+      console.log("search attempt", keyword, n, page.length, page.length ? "" : JSON.stringify(payload).slice(0, 200));
+      if (page.length) break;
+    }
     ids.push(...page.filter((id) => !ids.includes(id)));
-    if (page.length < 50) break;
+    if (page.length < 20) break;
   }
   const fresh: string[] = [];
   const feed = `search: ${keyword}`.slice(0, 80);
