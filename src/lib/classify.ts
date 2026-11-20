@@ -29,7 +29,7 @@ const RULES: [RegExp, number][] = [
   [/\bbab(y|ies)\b|newborn|toddler|\bkids?\b|child|\btoys?\b|puzzles?|squeeze|stress relief|fidget|squish|needoh/i, ID["kids-toys"]],
   [/kitchen|coffee|espresso|\bmugs?\b|\bcups?\b|tumbler|flask|wine|soap|sink|spice|yogurt|baking|peeler|dish/i, ID["home-kitchen"]],
   [/jewel|necklace|pendant|bracelet|earring|\brings?\b|wrist ?watch|\bwatch(es)?\b|keychain|key ring|brooch|enamel pins/i, ID.jewellery],
-  [/scarf|shawl|t-shirt|\btee\b|sweater|pullover|\bhats?\b|beanie|\bcap\b|balaclava|\bbag\b|messenger|slippers|sandals|clothing/i, ID.fashion],
+  [/scarf|shawl|t-shirt|\btee\b|sweater|pullover|\bhats?\b|beanie|\bcap\b|balaclava|\bbag\b|messenger|wallet|card holder|slippers|sandals|clothing/i, ID.fashion],
   [/skin|lip balm|lipstick|makeup|callus|pedicure|manicure|\bnail|coconut oil|beauty|\bhair\b/i, ID.beauty],
   [/\busb\b|bluetooth|earphone|headset|\biems?\b|ear tips|controller|joystick|ps[45]\b|xbox|charger|cable|thermostat|zigbee|laser|rangefinder|\bdji\b|camera|digital/i, ID.tech],
   [/\bhome\b|storage|organi[sz]er|\bwall\b|hooks?\b|hanger|\bmats?\b|decor|bathroom|holder|cover|cleaning|party favors|duct/i, ID["home-kitchen"]],
