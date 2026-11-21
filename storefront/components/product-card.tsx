@@ -11,6 +11,9 @@ import type { Product } from "@/lib/types";
 import { defaultVariant, primaryAxis, variantLabel } from "@/lib/variant";
 import { ProductArt } from "./product-art";
 
+/** Options shown on a card; long lists (e.g. 50 scarf colours) stretch every card in the row. */
+const MAX_OPTIONS = 6;
+
 export function ProductCard({ product, aspect, index }: { product: Product; aspect: string; index: number }) {
   const { add } = useCart();
   const reduce = useReducedMotion();
@@ -66,7 +69,7 @@ export function ProductCard({ product, aspect, index }: { product: Product; aspe
           <fieldset className="min-w-0 transition-opacity duration-200 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
             <legend className="sr-only">{axis.name}</legend>
             <div className="flex flex-wrap gap-1.5">
-              {axis.options.map(({ value, variant: option }) => {
+              {axis.options.slice(0, MAX_OPTIONS).map(({ value, variant: option }) => {
                 const selected = option.id === variant.id;
                 const out = option.stock <= 0;
                 return (
@@ -80,10 +83,15 @@ export function ProductCard({ product, aspect, index }: { product: Product; aspe
                       selected ? "border-[var(--color-accent)] bg-[var(--color-accent)]/15 text-[var(--color-fg)]" : "border-black/15 text-[var(--color-muted)] hover:border-black/40"
                     } ${out ? "line-through opacity-50" : ""}`}
                   >
-                    {value}
+                    <span className="block max-w-28 truncate">{value}</span>
                   </button>
                 );
               })}
+              {axis.options.length > MAX_OPTIONS && (
+                <Link href={`/product/${product.slug}`} className="rounded-[var(--radius-chip)] px-2 py-1 text-xs text-[var(--color-muted)] underline">
+                  +{axis.options.length - MAX_OPTIONS} more
+                </Link>
+              )}
             </div>
           </fieldset>
         )}
