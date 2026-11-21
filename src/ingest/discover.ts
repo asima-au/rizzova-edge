@@ -74,13 +74,23 @@ export async function discoverFromFeeds(env: Env, token: string): Promise<{ foun
   let found = 0;
   const fresh: string[] = [];
   for (const feed of s.feeds) {
-    let ids: string[] = [];
+    // Page through the feed with search_id (pages of up to 200) so each night reaches past the products already seen.
+    const ids: string[] = [];
+    let searchId: string | undefined;
     try {
-      const payload = await callBusiness(env, "aliexpress.ds.feed.itemids.get", token, { feed_name: feed, page_size: s.perFeed });
-      ids = feedProductIds(payload).slice(0, s.perFeed);
+      while (ids.length < s.perFeed) {
+        const payload = await callBusiness(env, "aliexpress.ds.feed.itemids.get", token, {
+          feed_name: feed, page_size: Math.min(200, s.perFeed - ids.length), ...(searchId ? { search_id: searchId } : {}),
+        });
+        const page = feedProductIds(payload).filter((id) => !ids.includes(id));
+        ids.push(...page);
+        const next = (payload?.result?.search_id ?? payload?.search_id) as string | undefined;
+        if (!page.length || !next || next === searchId) break;
+        searchId = next;
+      }
     } catch (err) {
       console.error("feed", feed, (err as Error).message);
-      continue;
+      if (!ids.length) continue;
     }
     found += ids.length;
     for (let i = 0; i < ids.length; i += 50) {

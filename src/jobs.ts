@@ -1,3 +1,4 @@
+import { callBusiness } from "./aliexpress/client";
 import { queueSoldOutRetries, replaceSoldOut } from "./ingest/replace";
 import type { Env } from "./env";
 import { getAccessToken, refreshToken, REFRESH_WINDOW_MS, tokenHealth } from "./aliexpress/auth";
@@ -11,6 +12,7 @@ import { alertOwner } from "./lib/alert";
 export type Job =
   | { type: "ingest-product"; aeProductId: string }
   | { type: "replace-product"; productId: number }
+  | { type: "debug-call"; method: string; params: Record<string, string | number> }
   | { type: "fulfil-order"; orderId: string }
   | { type: "track-fulfilment"; fulfilmentId: number }
   | { type: "vet-candidate"; aeProductId: string }
@@ -35,6 +37,11 @@ export async function handleQueue(batch: MessageBatch<Job>, env: Env): Promise<v
         if (p) await env.JOBS.send({ type: "replace-product", productId: p.id });
       }
       else if (job.type === "replace-product") await replaceSoldOut(env, job.productId);
+      else if (job.type === "debug-call") {
+        // Diagnostics only (queued by hand): log a read-only AliExpress call's reply.
+        const r = await callBusiness(env, job.method, await getToken(), job.params).catch((e) => ({ error: String(e) }));
+        console.log("debug-call", job.method, JSON.stringify(r).slice(0, 30000));
+      }
       else if (job.type === "fulfil-order") await fulfilOrder(env, await getToken(), job.orderId);
       else if (job.type === "track-fulfilment") await trackFulfilment(env, await getToken(), job.fulfilmentId);
       else if (job.type === "vet-candidate") await vetCandidate(env, await getToken(), job.aeProductId);
