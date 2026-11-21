@@ -18,7 +18,7 @@ export type Job =
   | { type: "run-discovery" }
   | { type: "search-discovery"; keyword: string };
 
-const SYNC_BATCH = 200;
+const SYNC_BATCH = 75; // x4 runs a day: every product re-checked daily without flooding the AliExpress call limit
 
 // ───────────── Queue consumer ─────────────
 export async function handleQueue(batch: MessageBatch<Job>, env: Env): Promise<void> {
