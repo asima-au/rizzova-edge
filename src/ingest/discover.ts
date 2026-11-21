@@ -102,9 +102,7 @@ export async function discoverFromFeeds(env: Env, token: string): Promise<{ foun
       res.forEach((r, j) => { if (r.meta.changes > 0) fresh.push(ids[i + j]!); });
     }
   }
-  for (let i = 0; i < fresh.length; i += 100) {
-    await env.JOBS.sendBatch(fresh.slice(i, i + 100).map((id) => ({ body: { type: "vet-candidate" as const, aeProductId: id } })));
-  }
+  // New candidates stay 'new'; the 15-minute cron vets them gradually (see jobs.ts) to respect AliExpress's call limit.
   return { found, queued: fresh.length };
 }
 

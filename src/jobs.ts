@@ -121,6 +121,16 @@ export async function handleCron(controller: ScheduledController, env: Env): Pro
     case "*/15 * * * *": {
       const h = await tokenHealth(env);
       if (h.authorised && h.accessExpiresInHours * 3600_000 < REFRESH_WINDOW_MS) await refreshToken(env);
+      // Drip-vet waiting candidates (15 per 15 min, about 1,400 a day) so a big feed batch never hits AliExpress's call limit.
+      if (h.authorised) {
+        const { results: waiting } = await env.DB.prepare(
+          `SELECT aliexpress_product_id AS id FROM ae_candidates WHERE status = 'new' AND updated_at < ? ORDER BY found_at LIMIT 15`,
+        ).bind(now() - 3600_000).all<{ id: string }>();
+        if (waiting.length) {
+          await env.DB.batch(waiting.map((w) => env.DB.prepare(`UPDATE ae_candidates SET updated_at = ? WHERE aliexpress_product_id = ?`).bind(now(), w.id)));
+          await env.JOBS.sendBatch(waiting.map((w) => ({ body: { type: "vet-candidate" as const, aeProductId: w.id } })));
+        }
+      }
       if (h.authorised && h.refreshExpiresInDays !== null && h.refreshExpiresInDays < 7) {
         console.warn(`AliExpress refresh token expires in ${h.refreshExpiresInDays} days – re-authorise at /oauth/aliexpress/start`);
       }
