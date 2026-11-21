@@ -1,3 +1,4 @@
+import { queueSoldOutRetries, replaceSoldOut } from "./ingest/replace";
 import type { Env } from "./env";
 import { getAccessToken, refreshToken, REFRESH_WINDOW_MS, tokenHealth } from "./aliexpress/auth";
 import { ingestProduct, recordSyncError } from "./ingest/product";
@@ -9,6 +10,7 @@ import { alertOwner } from "./lib/alert";
 
 export type Job =
   | { type: "ingest-product"; aeProductId: string }
+  | { type: "replace-product"; productId: number }
   | { type: "fulfil-order"; orderId: string }
   | { type: "track-fulfilment"; fulfilmentId: number }
   | { type: "vet-candidate"; aeProductId: string }
@@ -26,7 +28,13 @@ export async function handleQueue(batch: MessageBatch<Job>, env: Env): Promise<v
   for (const msg of batch.messages) {
     const job = msg.body;
     try {
-      if (job.type === "ingest-product") await ingestProduct(env, await getToken(), job.aeProductId);
+      if (job.type === "ingest-product") {
+        await ingestProduct(env, await getToken(), job.aeProductId);
+        // Sold out at the supplier: hide it and find a similar product (src/ingest/replace.ts).
+        const p = await env.DB.prepare(`SELECT id FROM products WHERE aliexpress_product_id = ? AND status = 'active' AND total_stock = 0 AND replaced_by_ae IS NULL`).bind(job.aeProductId).first<{ id: number }>();
+        if (p) await env.JOBS.send({ type: "replace-product", productId: p.id });
+      }
+      else if (job.type === "replace-product") await replaceSoldOut(env, job.productId);
       else if (job.type === "fulfil-order") await fulfilOrder(env, await getToken(), job.orderId);
       else if (job.type === "track-fulfilment") await trackFulfilment(env, await getToken(), job.fulfilmentId);
       else if (job.type === "vet-candidate") await vetCandidate(env, await getToken(), job.aeProductId);
@@ -131,6 +139,7 @@ export async function handleCron(controller: ScheduledController, env: Env): Pro
       });
       if (r) console.log(`discovery: ${r.found} feed items, ${r.queued} new candidates queued for vetting`);
       // Best-seller keyword searches, one job each so every search gets its own call budget.
+      await queueSoldOutRetries(env);
       const keywords = discoveryKeywords(env);
       if (keywords.length) await env.JOBS.sendBatch(keywords.map((keyword) => ({ body: { type: "search-discovery" as const, keyword } })));
       const { results } = await env.DB.prepare(`SELECT id FROM fulfillments WHERE status IN ('placed','shipped') LIMIT 500`).all<{ id: number }>();

@@ -71,6 +71,14 @@ products.get("/", async (c) => {
   return res;
 });
 
+/** GET /api/products/:slug/moved – where a hidden (sold-out, replaced) product's address now points. */
+products.get("/:slug/moved", async (c) => {
+  const row = await c.env.DB.prepare(
+    `SELECT n.slug FROM products o JOIN products n ON n.aliexpress_product_id = o.replaced_by_ae AND n.status = 'active' WHERE o.slug = ?`,
+  ).bind(c.req.param("slug")).first<{ slug: string }>();
+  return row ? c.json({ slug: row.slug }) : c.json({ error: "Not found" }, 404);
+});
+
 /** GET /api/products/:slug – product detail with active variants and images. */
 products.get("/:slug", async (c) => {
   const slug = c.req.param("slug");

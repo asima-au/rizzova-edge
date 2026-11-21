@@ -208,3 +208,7 @@ CREATE INDEX IF NOT EXISTS idx_product_copy_status ON product_copy(status);
 -- Candidate title and estimated retail price, saved when vetted (for picking).
 -- ALTER TABLE ae_candidates ADD COLUMN title TEXT;
 -- ALTER TABLE ae_candidates ADD COLUMN retail_cents INTEGER;
+
+-- Sold-out replacement (src/ingest/replace.ts)
+-- ALTER TABLE products ADD COLUMN replaced_by_ae TEXT;
+-- ALTER TABLE products ADD COLUMN replace_checked_at INTEGER;

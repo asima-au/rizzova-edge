@@ -65,6 +65,12 @@ export async function listProducts(query?: string, categoryId?: number): Promise
   return details.filter((d): d is ApiDetail => d !== null).map(fromApi);
 }
 
+/** New address for a sold-out product that was replaced, if any. */
+export async function movedSlug(slug: string): Promise<string | null> {
+  if (!API) return null;
+  return (await api<{ slug: string }>(`/api/products/${encodeURIComponent(slug)}/moved`))?.slug ?? null;
+}
+
 export async function getProduct(slug: string): Promise<Product | null> {
   if (!API) return (await previewCatalogue()).find((p) => p.slug === slug) ?? null;
   const d = await api<ApiDetail>(`/api/products/${encodeURIComponent(slug)}`);
