@@ -1,4 +1,4 @@
-import { callBusiness } from "./aliexpress/client";
+import { callBusiness, optionalCallsAllowed } from "./aliexpress/client";
 import { queueSoldOutRetries, replaceSoldOut } from "./ingest/replace";
 import type { Env } from "./env";
 import { getAccessToken, refreshToken, REFRESH_WINDOW_MS, tokenHealth } from "./aliexpress/auth";
@@ -31,7 +31,10 @@ export async function handleQueue(batch: MessageBatch<Job>, env: Env): Promise<v
   for (const msg of batch.messages) {
     const job = msg.body;
     try {
-      if (job.type === "ingest-product") {
+      if ((job.type === "vet-candidate" || job.type === "run-discovery" || job.type === "search-discovery") && !(await optionalCallsAllowed(env))) {
+        console.log("skipped (AliExpress daily budget or back-off)", job.type); // vet-candidate stays 'new' and is retried by the drip
+      }
+      else if (job.type === "ingest-product") {
         await ingestProduct(env, await getToken(), job.aeProductId);
         // Sold out at the supplier: hide it and find a similar product (src/ingest/replace.ts).
         const p = await env.DB.prepare(`SELECT id FROM products WHERE aliexpress_product_id = ? AND status = 'active' AND total_stock = 0 AND replaced_by_ae IS NULL`).bind(job.aeProductId).first<{ id: number }>();
@@ -123,10 +126,10 @@ export async function handleCron(controller: ScheduledController, env: Env): Pro
     case "*/15 * * * *": {
       const h = await tokenHealth(env);
       if (h.authorised && h.accessExpiresInHours * 3600_000 < REFRESH_WINDOW_MS) await refreshToken(env);
-      // Drip-vet waiting candidates (15 per 15 min, about 1,400 a day) so a big feed batch never hits AliExpress's call limit.
-      if (h.authorised) {
+      // Drip-vet waiting candidates (8 per 15 min, at most ~770 a day) only while within the daily call budget.
+      if (h.authorised && (await optionalCallsAllowed(env))) {
         const { results: waiting } = await env.DB.prepare(
-          `SELECT aliexpress_product_id AS id FROM ae_candidates WHERE status = 'new' AND updated_at < ? ORDER BY found_at LIMIT 15`,
+          `SELECT aliexpress_product_id AS id FROM ae_candidates WHERE status = 'new' AND updated_at < ? ORDER BY found_at LIMIT 8`,
         ).bind(now() - 3600_000).all<{ id: string }>();
         if (waiting.length) {
           await env.DB.batch(waiting.map((w) => env.DB.prepare(`UPDATE ae_candidates SET updated_at = ? WHERE aliexpress_product_id = ?`).bind(now(), w.id)));

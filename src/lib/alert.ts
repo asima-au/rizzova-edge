@@ -76,6 +76,7 @@ export async function dailyReport(env: Env): Promise<void> {
     `Last 7 days: ${week?.n ?? 0} paid order(s), ${aud(week?.c ?? 0)}`,
     `Live products: ${stock?.live ?? 0} (sold out and hidden: ${stock?.hidden ?? 0})`,
     `AliExpress connection: ${aeOk ? "OK" : "DISCONNECTED"}`,
+    `AliExpress requests yesterday: ${(await env.DB.prepare(`SELECT n FROM api_usage WHERE day = ?`).bind(new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)).first<{ n: number }>())?.n ?? 0} (optional work stops at 2,500 a day)`,
     "",
     `Live dashboard: ${DASHBOARD}`,
     "This email is sent by the store itself every day at about 11 am Sydney time.",

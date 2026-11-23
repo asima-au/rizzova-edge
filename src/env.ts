@@ -19,6 +19,7 @@ export interface Env {
   AUTO_FULFIL: string;
   DISCOVERY_FEEDS: string;
   DISCOVERY_KEYWORDS: string;
+  AE_OPTIONAL_DAILY_BUDGET?: string;
   DISCOVERY_PER_FEED: string;
   DISCOVERY_MIN_RATING: string;
   DISCOVERY_MIN_STORE_RATING: string;

@@ -66,6 +66,32 @@ export async function callSystem(env: Env, apiPath: string, apiParams: Params): 
   return post(`${env.AE_GATEWAY}/rest${apiPath}`, params);
 }
 
+/** UTC day key for the call counter. */
+const dayKey = () => new Date().toISOString().slice(0, 10);
+
+/** AliExpress business calls made today (all kinds). */
+export async function callsToday(env: Env): Promise<number> {
+  const row = await env.DB.prepare(`SELECT n FROM api_usage WHERE day = ?`).bind(dayKey()).first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
+/** True while we are backing off after AliExpress signalled a limit (stored in KV, set rarely). */
+export async function inBackoff(env: Env): Promise<boolean> {
+  const until = Number(await env.KV.get("ae_backoff_until")) || 0;
+  return until > Date.now();
+}
+
+/**
+ * Optional work (vetting suggestions, feed discovery, keyword search) may run only while today's calls are under
+ * AE_OPTIONAL_DAILY_BUDGET and we are not backing off. Orders, tracking and stock sync are never blocked.
+ */
+export async function optionalCallsAllowed(env: Env): Promise<boolean> {
+  if (await inBackoff(env)) return false;
+  return (await callsToday(env)) < (Number(env.AE_OPTIONAL_DAILY_BUDGET) || 2500);
+}
+
+const LIMIT_CODES = /limit|frequency|flow|throttl|too ?many|isp\.over|ApiCallLimit|AppCallLimit/i;
+
 /** Business API, e.g. method=aliexpress.ds.product.get. Returns the `<method>_response` payload. */
 export async function callBusiness(env: Env, method: string, accessToken: string, apiParams: Params): Promise<any> {
   const params = clean({
@@ -77,7 +103,18 @@ export async function callBusiness(env: Env, method: string, accessToken: string
     ...apiParams,
   });
   params.sign = await sign(env.AE_APP_SECRET.trim(), params);
-  const body = await post(`${env.AE_GATEWAY}/sync`, params);
+  await env.DB.prepare(`INSERT INTO api_usage (day, n) VALUES (?, 1) ON CONFLICT(day) DO UPDATE SET n = n + 1`).bind(dayKey()).run().catch(() => {});
+  let body: any;
+  try {
+    body = await post(`${env.AE_GATEWAY}/sync`, params);
+  } catch (err) {
+    // AliExpress says we are calling too often: pause optional work for 6 hours.
+    if (err instanceof AliExpressError && LIMIT_CODES.test(`${err.code} ${err.message}`)) {
+      await env.KV.put("ae_backoff_until", String(Date.now() + 6 * 3600_000), { expirationTtl: 7 * 3600 });
+      console.warn("AliExpress limit signalled; optional calls paused for 6 hours", err.code);
+    }
+    throw err;
+  }
   const key = method.replace(/\./g, "_") + "_response";
   const payload = body[key];
   if (!payload) throw new AliExpressError("no_payload", `Missing ${key} in response`, body?.request_id);

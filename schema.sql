@@ -212,3 +212,6 @@ CREATE INDEX IF NOT EXISTS idx_product_copy_status ON product_copy(status);
 -- Sold-out replacement (src/ingest/replace.ts)
 -- ALTER TABLE products ADD COLUMN replaced_by_ae TEXT;
 -- ALTER TABLE products ADD COLUMN replace_checked_at INTEGER;
+
+-- AliExpress business calls per UTC day (rate-limit guard, src/aliexpress/client.ts)
+CREATE TABLE IF NOT EXISTS api_usage (day TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0);
