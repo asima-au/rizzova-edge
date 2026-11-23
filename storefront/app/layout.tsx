@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Lora, Nunito_Sans } from "next/font/google";
+import { Bricolage_Grotesque, Plus_Jakarta_Sans } from "next/font/google";
 import { CartProvider } from "@/context/cart-context";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -9,9 +9,9 @@ import { STORE } from "@/lib/policies";
 import { SITE_DESCRIPTION, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
-// Boutique pairing: Lora (warm serif, echoes the logo) for headings, Nunito Sans for text and prices.
-const serif = Lora({ subsets: ["latin"], variable: "--font-lora", weight: ["500", "600", "700"], style: ["normal", "italic"] });
-const body = Nunito_Sans({ subsets: ["latin"], variable: "--font-nunito" });
+// Modern retail pairing: Bricolage Grotesque (characterful display) for headings, Plus Jakarta Sans for text and prices.
+const serif = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-lora", weight: ["500", "600", "700", "800"] });
+const body = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-nunito", weight: ["400", "500", "600", "700"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

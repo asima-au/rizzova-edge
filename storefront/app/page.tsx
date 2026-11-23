@@ -64,7 +64,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     <div>
       {banner}
       <DepartmentCircles products={shown} photos={photos} />
-      <PromoBanners />
+      <PromoBanners products={first} />
       <ProductRow id="gifts" title="Top 10 Christmas gifts" products={first} />
       <ProductRow id="new" title="New arrivals" products={shown.filter((p) => !pickedIds.has(p.id)).slice(0, 12)} />
     </div>

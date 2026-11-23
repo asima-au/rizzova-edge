@@ -17,7 +17,7 @@ export function DepartmentCircles({ products, photos = {} }: { products: Product
                   <img
                     src={image ?? "/brand/logo-mark.png"}
                     alt=""
-                    loading="lazy"
+                    loading="eager"
                     className={image ? "size-full object-cover transition group-hover:scale-105" : "size-1/2 object-contain opacity-80"}
                   />
                 </span>
