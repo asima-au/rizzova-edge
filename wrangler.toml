@@ -23,7 +23,7 @@ CF_IMAGES_ACCOUNT_HASH = ""   # empty = no Cloudflare Images; product photos are
 CHECKOUT_COUNTRIES = "AU,US,AE"
 AUTO_FULFIL = "off"            # "on" = paid live orders are placed on AliExpress automatically
 # Nightly discovery (src/ingest/discover.ts): promo feeds -> vetting -> import.
-DISCOVERY_FEEDS = "DS_Winter-must-haves,DS_NewYear'sEveEssentials,DS_BoxingDayEssentials,DS_Home&Kitchen_bestsellers,AEB_AU_HomeImprovement&Furniture&Lights&Tools&Luggage,AEB_SHOPLAZZA_Toys&Hobbies_$10~20_20241118,AEB_SHOPLAZZA_Mother&Kids_$10~30_20241115,pets&supplies_ZA topsellers_ 20240423,DS_NewArrivals"
+DISCOVERY_FEEDS = "DS_Winter-must-haves,DS_NewYear'sEveEssentials,DS_BoxingDayEssentials,DS_Home&Kitchen_bestsellers,AEB_AU_HomeImprovement&Furniture&Lights&Tools&Luggage,AEB_SHOPLAZZA_Toys&Hobbies_$10~20_20241118,AEB_SHOPLAZZA_Mother&Kids_$10~30_20241115,pets&supplies_ZA topsellers_ 20240423,DS_NewArrivals,AEB_US_Home&Garden_TopSellers,AEB_US_Lighting_TopSellers,AEB_Topseller_PriceRange0~20$,toys_ZA topsellers_ 20240423,AEB_SHOPLAZZA_Toys&Hobbies_$0~10_20241115,AEB_SHOPLAZZA_Mother&Kids_$0~10_20241115,DS_Sports&Outdoors_bestsellers"
 DISCOVERY_PER_FEED = "100"
 # AliExpress calls per UTC day after which optional work (vetting, discovery, search) stops; orders and stock sync always run.
 AE_OPTIONAL_DAILY_BUDGET = "2500"
