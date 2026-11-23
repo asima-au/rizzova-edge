@@ -44,3 +44,40 @@ export async function alertNewOrder(env: Env, orderId: string): Promise<void> {
     `You have a new paid order on rizzova.com.\n\nOrder: ${order.order_number}\nTotal: A$${(order.total_cents / 100).toFixed(2)}\nShip to: ${order.country ?? "see dashboard"}\n\n${items}\n\nPlace it on AliExpress from the master dashboard, then click "Mark as ordered":\n${DASHBOARD}\n`,
   );
 }
+
+/**
+ * Daily store report emailed by the store itself (no Claude needed), from the 00:00 UTC (11 am Sydney) cron.
+ * Counts only, no customer details. The subject starts with "ACTION NEEDED" when something waits on the owner.
+ */
+export async function dailyReport(env: Env): Promise<void> {
+  const since = Date.UTC(2026, 10, 19, 3, 40); // Stripe live; earlier orders were tests
+  const LIVE = `created_at >= ${since} AND COALESCE(shipping_name,'') NOT LIKE 'TEST ORDER%'`;
+  const PAID = `status IN ('paid','fulfilling','shipped','delivered')`;
+  const one = <T>(sql: string) => env.DB.prepare(sql).first<T>();
+  const [day, week, toOrder, failed, stock, ae] = await Promise.all([
+    one<{ n: number; c: number }>(`SELECT COUNT(*) n, COALESCE(SUM(total_cents),0) c FROM orders WHERE ${LIVE} AND ${PAID} AND created_at >= ${Date.now() - 86_400_000}`),
+    one<{ n: number; c: number }>(`SELECT COUNT(*) n, COALESCE(SUM(total_cents),0) c FROM orders WHERE ${LIVE} AND ${PAID} AND created_at >= ${Date.now() - 7 * 86_400_000}`),
+    one<{ n: number }>(`SELECT COUNT(*) n FROM orders o WHERE o.status = 'paid' AND o.created_at >= ${since} AND COALESCE(o.shipping_name,'') NOT LIKE 'TEST ORDER%'
+      AND NOT EXISTS (SELECT 1 FROM fulfillments f WHERE f.order_id = o.id AND f.ae_order_id IS NOT NULL)`),
+    one<{ n: number }>(`SELECT COUNT(*) n FROM orders WHERE ${LIVE} AND status = 'fulfilment_failed'`),
+    one<{ live: number; hidden: number }>(`SELECT SUM(status = 'active') live, SUM(status = 'unavailable' AND total_stock = 0) hidden FROM products`),
+    one<{ expires_at: number }>(`SELECT expires_at FROM auth_tokens LIMIT 1`),
+  ]);
+  const aud = (c: number) => `A$${(c / 100).toFixed(2)}`;
+  const aeOk = !!ae && ae.expires_at > Date.now();
+  const actions: string[] = [];
+  if ((toOrder?.n ?? 0) > 0) actions.push(`- ${toOrder!.n} paid order(s) to place on AliExpress: ${DASHBOARD}`);
+  if ((failed?.n ?? 0) > 0) actions.push(`- ${failed!.n} order(s) failed at the supplier: ${DASHBOARD}`);
+  if (!aeOk) actions.push(`- AliExpress is disconnected: open https://rizzova-edge.rizzdigital.workers.dev/oauth/aliexpress/start in an InPrivate window`);
+  const subject = actions.length ? "ACTION NEEDED: Rizzova daily report" : `Rizzova daily report: ${day?.n ?? 0} order(s), ${aud(day?.c ?? 0)}`;
+  await alertOwner(env, subject, [
+    actions.length ? `Needs you:\n${actions.join("\n")}\n` : "All clear: nothing waiting on you.\n",
+    `Last 24 hours: ${day?.n ?? 0} paid order(s), ${aud(day?.c ?? 0)}`,
+    `Last 7 days: ${week?.n ?? 0} paid order(s), ${aud(week?.c ?? 0)}`,
+    `Live products: ${stock?.live ?? 0} (sold out and hidden: ${stock?.hidden ?? 0})`,
+    `AliExpress connection: ${aeOk ? "OK" : "DISCONNECTED"}`,
+    "",
+    `Live dashboard: ${DASHBOARD}`,
+    "This email is sent by the store itself every day at about 11 am Sydney time.",
+  ].join("\n"));
+}

@@ -7,11 +7,12 @@ import { getDsOrder, placeDsOrder } from "./aliexpress/dropshipper";
 import { now } from "./lib/util";
 import { discoverFromFeeds, discoverFromSearch, discoveryKeywords, vetCandidate } from "./ingest/discover";
 import { matchLegacy } from "./ingest/legacy";
-import { alertOwner } from "./lib/alert";
+import { alertOwner, dailyReport } from "./lib/alert";
 
 export type Job =
   | { type: "ingest-product"; aeProductId: string }
   | { type: "replace-product"; productId: number }
+  | { type: "daily-report" }
   | { type: "debug-call"; method: string; params: Record<string, string | number> }
   | { type: "fulfil-order"; orderId: string }
   | { type: "track-fulfilment"; fulfilmentId: number }
@@ -37,6 +38,7 @@ export async function handleQueue(batch: MessageBatch<Job>, env: Env): Promise<v
         if (p) await env.JOBS.send({ type: "replace-product", productId: p.id });
       }
       else if (job.type === "replace-product") await replaceSoldOut(env, job.productId);
+      else if (job.type === "daily-report") await dailyReport(env);
       else if (job.type === "debug-call") {
         // Diagnostics only (queued by hand): log a read-only AliExpress call's reply.
         const r = await callBusiness(env, job.method, await getToken(), job.params).catch((e) => ({ error: String(e) }));
@@ -137,6 +139,8 @@ export async function handleCron(controller: ScheduledController, env: Env): Pro
       return;
     }
     case "0 */6 * * *": {
+      // The 00:00 UTC run (11 am Sydney): the store emails its own daily report, no Claude needed.
+      if (new Date(controller.scheduledTime).getUTCHours() === 0) await dailyReport(env).catch((e) => console.error("daily report", (e as Error).message));
       const { results } = await env.DB.prepare(
         `SELECT aliexpress_product_id AS id FROM import_queue WHERE attempts < 5
          UNION ALL
