@@ -1,3 +1,4 @@
+import { merchantFeed } from "./routes/merchant-feed";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Env } from "./env";
@@ -23,6 +24,7 @@ app.route("/console/dashboard", dashboard);
 app.route("/console", consoleApp);
 app.route("/api/products", products);
 app.route("/api/reel-feed", reelFeed);
+app.route("/api/merchant-feed.xml", merchantFeed);
 app.route("/api/cart", cart);
 app.route("/api/checkout", checkout);
 app.route("/webhooks/stripe", stripeWebhook);
