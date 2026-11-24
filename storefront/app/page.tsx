@@ -1,5 +1,6 @@
 import { DepartmentCircles } from "@/components/retail/department-circles";
 import { PromoBanners } from "@/components/retail/promo-banners";
+import { GiftGuides } from "@/components/retail/gift-guides";
 import { ProductRow } from "@/components/retail/product-row";
 import { ProductGrid } from "@/components/product-grid";
 import { getProduct, listProducts, previewSource } from "@/lib/catalog";
@@ -66,6 +67,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       <DepartmentCircles products={shown} photos={photos} />
       <PromoBanners products={first} />
       <ProductRow id="gifts" title="Top 10 Christmas gifts" products={first} />
+      <GiftGuides />
       <ProductRow id="new" title="New arrivals" products={shown.filter((p) => !pickedIds.has(p.id)).slice(0, 12)} />
     </div>
   );

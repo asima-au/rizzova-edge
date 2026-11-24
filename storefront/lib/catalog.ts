@@ -65,6 +65,15 @@ export async function listProducts(query?: string, categoryId?: number): Promise
   return details.filter((d): d is ApiDetail => d !== null).map(fromApi);
 }
 
+/** Products in a gift-guide collection (rules live in the backend), in its order. */
+export async function getCollectionProducts(slug: string): Promise<Product[]> {
+  if (!API) return [];
+  const col = await api<{ slugs: string[] }>(`/api/collections/${encodeURIComponent(slug)}`);
+  if (!col) return [];
+  const items = await Promise.all(col.slugs.map((s) => getProduct(s)));
+  return items.filter((p): p is Product => p !== null);
+}
+
 /** New address for a sold-out product that was replaced, if any. */
 export async function movedSlug(slug: string): Promise<string | null> {
   if (!API) return null;
