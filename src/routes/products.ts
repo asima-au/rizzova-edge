@@ -85,7 +85,7 @@ products.get("/:slug", async (c) => {
   const product = await c.env.DB.prepare(
     // Approved Rizz AI copy (plain text) replaces the supplier title and description.
     `SELECT p.id, COALESCE(pc.title, p.title) AS title, p.slug, COALESCE(pc.description, p.description) AS description,
-            pc.summary, p.currency, p.min_price_cents, p.max_price_cents, p.ship_countries, p.category_id
+            pc.summary, p.currency, p.min_price_cents, p.max_price_cents, p.ship_countries, p.category_id, p.supplier_rating, p.supplier_orders
      FROM products p LEFT JOIN product_copy pc ON pc.product_id = p.id AND pc.status = 'approved'
      WHERE p.slug = ? AND p.status = 'active'`,
   ).bind(slug).first<{ id: number }>();

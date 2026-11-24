@@ -22,6 +22,9 @@ export interface Product {
   summary?: string | null;
   /** Countries the supplier delivers to, e.g. ["AU"]; empty or missing = all store countries. */
   shipCountries?: string[];
+  /** AliExpress buyers' average rating and units sold (supplier figures, not Rizzova reviews). */
+  supplierRating?: number | null;
+  supplierOrders?: number | null;
   currency: string;
   category: string;
   categoryId?: number | null;

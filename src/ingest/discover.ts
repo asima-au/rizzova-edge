@@ -12,7 +12,7 @@ import { now } from "../lib/util";
  * never imported. Check `GET /admin/candidates?status=rejected` after the first run.
  */
 
-const num = (v: unknown): number | null => {
+export const num = (v: unknown): number | null => {
   const n = typeof v === "number" ? v : typeof v === "string" ? Number(v.replace(/[^\d.]/g, "")) : NaN;
   return Number.isFinite(n) && String(v).trim() !== "" ? n : null;
 };
@@ -28,7 +28,7 @@ function findAll(node: unknown, key: string, out: unknown[] = []): unknown[] {
   }
   return out;
 }
-const first = (node: unknown, keys: string[]): unknown => {
+export const first = (node: unknown, keys: string[]): unknown => {
   for (const k of keys) {
     const hit = findAll(node, k).find((v) => v !== undefined && v !== null && v !== "");
     if (hit !== undefined) return hit;

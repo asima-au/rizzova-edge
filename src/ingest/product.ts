@@ -1,3 +1,4 @@
+import { first, num } from "./discover";
 import { classifyTitle } from "../lib/classify";
 import type { Env } from "../env";
 import { getDsProduct, list, type DsProduct, type DsSku } from "../aliexpress/dropshipper";
@@ -148,6 +149,11 @@ export async function ingestProduct(env: Env, token: string, aeProductId: string
     ).bind(aeProductId),
   );
   stmts.push(env.DB.prepare(`DELETE FROM import_queue WHERE aliexpress_product_id = ?`).bind(aeProductId));
+  // AliExpress buyers' rating and units sold, shown on the store as supplier figures (never as our own reviews).
+  stmts.push(
+    env.DB.prepare(`UPDATE products SET supplier_rating = ?, supplier_orders = ? WHERE aliexpress_product_id = ?`)
+      .bind(num(first(ds, ["avg_evaluation_rating", "evaluation_rating"])), num(first(ds, ["sales_count", "order_count"])), aeProductId),
+  );
   // Vetted suggestions record which countries the supplier reaches cheaply; NULL means all checkout countries.
   stmts.push(
     env.DB.prepare(

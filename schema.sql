@@ -215,3 +215,7 @@ CREATE INDEX IF NOT EXISTS idx_product_copy_status ON product_copy(status);
 
 -- AliExpress business calls per UTC day (rate-limit guard, src/aliexpress/client.ts)
 CREATE TABLE IF NOT EXISTS api_usage (day TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 0);
+
+-- Supplier (AliExpress buyers') rating and units sold, refreshed on every sync
+-- ALTER TABLE products ADD COLUMN supplier_rating REAL;
+-- ALTER TABLE products ADD COLUMN supplier_orders INTEGER;
