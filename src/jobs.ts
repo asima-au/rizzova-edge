@@ -58,6 +58,13 @@ export async function handleQueue(batch: MessageBatch<Job>, env: Env): Promise<v
       const message = (err as Error).message;
       console.error(job.type, message);
       if (job.type === "ingest-product") await recordSyncError(env, job.aeProductId, message);
+      // Permanent answers (cannot ship to our country, sold out, deleted): reject once, never retry.
+      if (job.type === "vet-candidate" && /SHIP_TO_COUNTRY_PROHIBITED|Unsaleable|ITEM_ID_NOT_FOUND|NOT_EXIST|off.?shelf/i.test(message)) {
+        await env.DB.prepare(`UPDATE ae_candidates SET status = 'rejected', reason = ?, updated_at = ? WHERE aliexpress_product_id = ?`)
+          .bind(message.slice(0, 120), now(), job.aeProductId).run();
+        msg.ack();
+        continue;
+      }
       if (job.type === "fulfil-order" && msg.attempts >= 5) {
         await env.DB.prepare(`UPDATE orders SET status = 'fulfilment_failed', updated_at = ? WHERE id = ?`).bind(now(), job.orderId).run();
         await alertOwner(env, "Supplier order failed: place it by hand", `Automatic AliExpress ordering failed 5 times (${message.slice(0, 300)}).\n\nOpen the master dashboard and place the order on AliExpress by hand:\nhttps://rizzova-edge.rizzdigital.workers.dev/console/dashboard\n`);
