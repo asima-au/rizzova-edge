@@ -16,6 +16,7 @@ export function SiteFooter() {
         <nav aria-label="Help">
           <h2 className="font-[family-name:var(--font-mono)] text-xs uppercase tracking-widest text-[var(--color-muted)]">Help</h2>
           <ul className="mt-3 space-y-2 text-sm">
+            <li><Link href="/journal" className="hover:text-[var(--color-accent)]">Journal: gift trends</Link></li>
             <li><Link href="/contact" className="hover:text-[var(--color-accent)]">Contact us</Link></li>
             {POLICIES.filter((p) => ["shipping", "refunds", "payments"].includes(p.slug)).map((p) => (
               <li key={p.slug}><Link href={`/${p.slug}`} className="hover:text-[var(--color-accent)]">{p.title}</Link></li>
