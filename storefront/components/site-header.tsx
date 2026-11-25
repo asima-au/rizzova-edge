@@ -20,7 +20,7 @@ export function SiteHeader() {
   return (
     <>
       <p className="bg-[var(--color-accent)] px-4 py-2 text-center text-[13px] text-[var(--color-accent-ink)]">
-        <b>Christmas:</b> order by 3 December for delivery before Christmas · Free delivery to Australia &amp; the US
+        <b>15% off with code XMAS15</b> · Order by 3 December for Christmas delivery · Free delivery to Australia &amp; the US
       </p>
       <header className="sticky top-0 z-40 bg-[var(--color-plum)] text-[#f7f3e8]">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-6 sm:px-6">

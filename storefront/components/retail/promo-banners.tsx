@@ -24,6 +24,7 @@ export function PromoBanners({ products = [] }: { products?: Product[] }) {
               Gifts they&rsquo;ll <span className="text-[var(--color-accent)]">actually</span> love
             </h2>
             <p className="mt-4 text-[15px] text-white/75">Order by 3 December for Christmas delivery. Free tracked shipping.</p>
+            <p className="mt-3 inline-flex items-center gap-2 rounded-xl border border-dashed border-[var(--color-accent)] px-3 py-1.5 text-sm font-semibold"><span className="text-[var(--color-accent)]">15% off</span> with code <b className="tracking-wider text-white">XMAS15</b></p>
           </div>
           <span className="mt-8 inline-flex w-fit items-center gap-2 rounded-full bg-[var(--color-accent)] px-6 py-3 text-sm font-bold text-[var(--color-accent-ink)] shadow-[0_10px_24px_-8px_rgba(201,161,74,.8)] transition group-hover:-translate-y-0.5">
             Shop the top 10 <span aria-hidden>→</span>

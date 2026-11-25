@@ -32,6 +32,7 @@ export default async function GiftCollectionPage({ params }: { params: Params })
         <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--color-accent)]">Gift guide</p>
         <h1 className="mt-2 font-[family-name:var(--font-display)] text-4xl font-extrabold tracking-tight sm:text-5xl">{col.name}</h1>
         <p className="mt-3 max-w-xl text-white/75">{col.blurb}</p>
+        <p className="mt-4 inline-flex items-center gap-2 rounded-xl border border-dashed border-[var(--color-accent)] px-3 py-1.5 text-sm font-semibold"><span className="text-[var(--color-accent)]">15% off</span> with code <b className="tracking-wider">XMAS15</b> · until 24 Dec</p>
       </header>
       <nav aria-label="Other gift guides" className="flex flex-wrap gap-2">
         {COLLECTIONS.filter((c) => c.slug !== col.slug).map((c) => (
