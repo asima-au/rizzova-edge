@@ -74,6 +74,8 @@ export async function dailyReport(env: Env): Promise<void> {
     actions.length ? `Needs you:\n${actions.join("\n")}\n` : "All clear: nothing waiting on you.\n",
     `Last 24 hours: ${day?.n ?? 0} paid order(s), ${aud(day?.c ?? 0)}`,
     `Last 7 days: ${week?.n ?? 0} paid order(s), ${aud(week?.c ?? 0)}`,
+    // Christmas 2026 sales targets (set 25 Nov): 5 paid orders by 3 Dec (delivery cut-off), A$1,500 by 24 Dec.
+    `Target progress: ${(await env.DB.prepare(`SELECT COUNT(*) n, COALESCE(SUM(total_cents),0) c FROM orders WHERE ${LIVE} AND ${PAID} AND created_at >= ${Date.UTC(2026, 10, 25)}`).first<{ n: number; c: number }>().then((t) => `${t?.n ?? 0} of 5 orders by 3 Dec · ${aud(t?.c ?? 0)} of A$1,500 by 24 Dec`))}`,
     `Live products: ${stock?.live ?? 0} (sold out and hidden: ${stock?.hidden ?? 0})`,
     `AliExpress connection: ${aeOk ? "OK" : "DISCONNECTED"}`,
     `AliExpress requests yesterday: ${(await env.DB.prepare(`SELECT n FROM api_usage WHERE day = ?`).bind(new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)).first<{ n: number }>())?.n ?? 0} (optional work stops at 2,500 a day)`,
