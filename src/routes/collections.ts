@@ -33,6 +33,31 @@ export const COLLECTIONS: Record<string, { name: string; where: string }> = {
     where: `${like(["teacher", "tumbler", "planner", "pencil", "highlighter", "stationery", "notebook", "copybook", "bookmark", "desk lamp", "table light", "candle", "plush keychain", "enamel pins", "water bottle", "night light"])}
             AND p.min_price_cents <= 4000 AND COALESCE(p.category_id, 0) <> 2 AND ${NOT_GIFTY}`,
   },
+  // Added 26 Nov: "mens gifts" +250% (Google Trends AU), stocking stuffers, teens, pet lovers, winter (US).
+  "gifts-for-men": {
+    name: "Gifts for men",
+    where: `${like(["men''s", "mens ", " men ", "for men", "watch", "wallet", "card holder", "messenger", "sunglasses", "earbuds", "earphone", "tripod", "selfie", "diecast", "car model", "building block", "dice", "card game", "milk froth", "coffee", "wine pourer", "leather bracelet", "balaclava", "fidget slider", "edc"])}
+            AND NOT ${like(["women", "girl", "kids", "baby", "lady", "female", "hello kitty", "plush"])} AND ${NOT_GIFTY}`,
+  },
+  "stocking-stuffers": {
+    name: "Stocking stuffers under A$15",
+    where: `p.min_price_cents BETWEEN 300 AND 1500 AND COALESCE(p.category_id, 0) <> 2
+            AND NOT ${like(["baby", "newborn", "nappy", "swaddle", "backpack", "waist bag", "storage bag", "water storage"])} AND ${NOT_GIFTY}`,
+  },
+  "gifts-for-teen-girls": {
+    name: "Gifts for teen girls",
+    where: `${like(["kawaii", "plush keychain", "claw clip", "hair clip", "nail", "lip balm", "silk scarf", "sunset lamp", "necklace", "hello kitty", "kuromi", "squish", "pencil case", "night light", "enamel pin", "cat ear", "beanie", "bouquet", "jewelry box", "jewellery box", "coin purse", "sanrio", "pink"])}
+            AND NOT ${like(["men''s", "for men", " men ", "baby", "newborn", "toddler", "dog", "pet "])} AND ${NOT_GIFTY}`,
+  },
+  "pet-lovers": {
+    name: "Gifts for pet lovers",
+    where: `p.category_id = 2 AND NOT ${like(["diaper", "nappies", "poop", "seat belt", "seatbelt", "leash clip", "suture", "replacement", "replacing"])} AND ${NOT_GIFTY}`,
+  },
+  "winter-warmers": {
+    name: "Cosy winter gifts",
+    where: `${like(["beanie", "winter", "scarf", "blanket", "fleece", "fur lined", "faux fur", "balaclava", "sleeping bag", "pashmina", "cashmere", "cosy", "cozy", "knit"])}
+            AND NOT ${like(["summer", "swim", "sandal", "pet ", "cat ", "dog", "christmas"])} AND ${NOT_GIFTY}`,
+  },
 };
 
 collections.get("/:slug", async (c) => {

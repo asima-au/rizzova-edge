@@ -17,7 +17,7 @@ const plain = (html: string | null) =>
 merchantFeed.get("/", async (c) => {
   const site = c.env.PUBLIC_SITE_URL.replace(/\/$/, "");
   const { results } = await c.env.DB.prepare(
-    `SELECT p.id, COALESCE(pc.title, p.title) AS title, COALESCE(pc.summary, pc.description, p.description) AS description,
+    `SELECT p.id, COALESCE(pc.title, p.title) AS title, COALESCE(NULLIF(pc.summary, ''), NULLIF(pc.description, ''), p.description) AS description,
             p.slug, p.currency, p.min_price_cents, p.feature_image_id, cat.name AS department
      FROM products p
      LEFT JOIN product_copy pc ON pc.product_id = p.id AND pc.status = 'approved'
