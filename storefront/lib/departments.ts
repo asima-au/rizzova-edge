@@ -8,7 +8,6 @@ const dept = (slug: string) => `/?dept=${slug}`;
 
 export const DEPARTMENTS: Department[] = [
   { name: "Christmas Gifts", href: "/#gifts", highlight: true },
-  { name: "🎁 Gift Finder", href: "/gift-finder" },
   { name: "Home & Kitchen", href: dept("home-kitchen"), id: 1 },
   { name: "Pets", href: dept("pets"), id: 2 },
   { name: "Kids & Toys", href: dept("kids-toys"), id: 3 },
