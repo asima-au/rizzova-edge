@@ -37,6 +37,7 @@ consoleApp.get("/home", requireAdmin, (c) => c.html(page(`<h1>Rizzova admin</h1>
 <a class="b" href="/admin/discovery/run">3. Import products now</a>
 <a class="b" href="/admin/candidates">4. See import results</a>
 <a class="b" href="/console/dashboard" style="background:#c9a14a;color:#241534">Master dashboard</a>
+<a class="b" href="/console/outreach">Backlink outreach (Fridays)</a>
 <form method="post" action="/console/test-alert"><button type="submit">Send me a test alert email</button></form>
 <a class="b" href="/console/suggestions">New product suggestions (approve before they go live)</a>
 <a class="b" href="/console/titles">Review new product titles (Rizz AI)</a>
@@ -198,4 +199,37 @@ consoleApp.post("/search", requireAdmin, async (c) => {
   return c.html(page(`<h1>Searching ${keywords.length} keyword${keywords.length === 1 ? "" : "s"}</h1>
 <p>Checking the top 100 best sellers for each. Products that pass your rules appear under suggestions in about 20–40 minutes.</p>
 <a class="b" href="/console/suggestions">Suggestions</a><a class="b" href="/console/home">Home</a>`));
+});
+
+const esc = (v: unknown) => String(v ?? "").replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[ch]!);
+
+/** Backlink outreach tracker. Claude's weekly routine adds prospects and Gmail drafts; the owner sends them and ticks them off here. */
+consoleApp.get("/outreach", requireAdmin, async (c) => {
+  const { results } = await c.env.DB.prepare(
+    `SELECT id, target_url, site, kind, score, contact, matched_url, pitch, status, found_at, sent_at FROM outreach
+     ORDER BY CASE status WHEN 'drafted' THEN 0 WHEN 'sent' THEN 1 WHEN 'followed_up' THEN 2 ELSE 3 END, found_at DESC LIMIT 200`,
+  ).all<Record<string, any>>();
+  const count = (s: string) => results.filter((r) => r.status === s).length;
+  const rows = results.map((r) => `<li style="background:#fff;border-radius:12px;padding:12px;margin:10px 0;list-style:none">
+<b>${esc(r.site || r.target_url)}</b> <small>· ${esc(r.kind)} · fit ${esc(r.score)}/10 · <b>${esc(r.status)}</b></small><br>
+<a href="${esc(r.target_url)}" target="_blank" rel="noopener">Their article</a> · Pitching: <a href="${esc(r.matched_url)}" target="_blank" rel="noopener">${esc(String(r.matched_url ?? "").replace("https://rizzova.com", ""))}</a><br>
+<small>To: ${esc(r.contact)}</small>
+<details><summary>Pitch</summary><p style="white-space:pre-wrap">${esc(r.pitch)}</p></details>
+<form method="post" style="display:flex;gap:6px;flex-wrap:wrap"><input type="hidden" name="id" value="${r.id}">
+${["sent", "replied", "linked", "dead"].map((s) => `<button name="status" value="${s}" style="width:auto;display:inline-block;padding:8px 12px;font-size:14px;margin:4px 0">${s === "sent" ? "Mark sent" : s === "dead" ? "Skip" : s.charAt(0).toUpperCase() + s.slice(1)}</button>`).join("")}</form></li>`).join("");
+  return c.html(page(`<h1>Backlink outreach</h1>
+<p>Every Friday: open Gmail drafts, read each pitch, press Send, then tap <b>Mark sent</b> here. Follow-ups are drafted for you after 5 days.</p>
+<p><b>${count("drafted")}</b> to send · <b>${count("sent") + count("followed_up")}</b> waiting for reply · <b>${count("linked")}</b> links won</p>
+<ul style="padding:0">${rows || "<p>No prospects yet. The weekly routine adds them on Wednesdays.</p>"}</ul>
+<a class="b" href="/console/home">Back</a>`).replace("max-width:440px", "max-width:720px"));
+});
+
+consoleApp.post("/outreach", requireAdmin, async (c) => {
+  const form = await c.req.parseBody();
+  const status = String(form.status ?? "");
+  if (["sent", "replied", "linked", "dead"].includes(status)) {
+    await c.env.DB.prepare(`UPDATE outreach SET status = ?, sent_at = CASE WHEN ? = 'sent' THEN ? ELSE sent_at END, updated_at = ? WHERE id = ?`)
+      .bind(status, status, now(), now(), Number(form.id)).run();
+  }
+  return c.redirect("/console/outreach", 303);
 });

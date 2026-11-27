@@ -219,3 +219,19 @@ CREATE TABLE IF NOT EXISTS api_usage (day TEXT PRIMARY KEY, n INTEGER NOT NULL D
 -- Supplier (AliExpress buyers') rating and units sold, refreshed on every sync
 -- ALTER TABLE products ADD COLUMN supplier_rating REAL;
 -- ALTER TABLE products ADD COLUMN supplier_orders INTEGER;
+
+-- Backlink outreach tracker, filled by the weekly backlink routine (Claude). The owner sends the Gmail drafts on Fridays.
+CREATE TABLE IF NOT EXISTS outreach (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  target_url   TEXT NOT NULL UNIQUE,
+  site         TEXT,
+  kind         TEXT,                 -- mention | roundup | gap | press
+  score        INTEGER,              -- 1-10 fit; under 7 is never saved
+  contact      TEXT,                 -- email, or contact-form URL
+  matched_url  TEXT,                 -- Rizzova page suggested in the pitch
+  pitch        TEXT,
+  status       TEXT NOT NULL DEFAULT 'drafted' CHECK (status IN ('drafted','sent','followed_up','replied','linked','dead')),
+  found_at     INTEGER NOT NULL,
+  sent_at      INTEGER,
+  updated_at   INTEGER NOT NULL
+);
