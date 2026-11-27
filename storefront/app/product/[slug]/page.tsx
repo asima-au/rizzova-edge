@@ -5,7 +5,11 @@ import { SITE_URL } from "@/lib/site";
 import { MediaGallery, type MediaItem } from "@/components/pdp/media-gallery";
 import { ProductExperience } from "@/components/pdp/product-experience";
 import { SpecPanel } from "@/components/pdp/spec-panel";
-import { getComplements, getProduct, movedSlug } from "@/lib/catalog";
+import Link from "next/link";
+import { getComplements, getProduct, listProducts, movedSlug } from "@/lib/catalog";
+import { ProductGrid } from "@/components/product-grid";
+import { COLLECTIONS } from "@/lib/collections";
+import { DEPARTMENTS } from "@/lib/departments";
 
 type Params = Promise<{ slug: string }>;
 
@@ -38,7 +42,13 @@ export default async function ProductPage({ params }: { params: Params }) {
     if (words) redirect(`/?q=${encodeURIComponent(words)}`);
     notFound();
   }
-  const complements = await getComplements(product);
+  const [complements, sameDept] = await Promise.all([
+    getComplements(product),
+    product.categoryId ? listProducts(undefined, product.categoryId) : Promise.resolve([]),
+  ]);
+  // Internal links for shoppers and crawlers: related products in the same department, plus the gift guides.
+  const related = sameDept.filter((p) => p.slug !== product.slug).slice(0, 8);
+  const department = DEPARTMENTS.find((d) => d.id && d.id === product.categoryId);
   const media: MediaItem[] = product.images.map((src, i) => ({ kind: "image", src, alt: `${product.title}, image ${i + 1}` }));
   const prices = product.variants.map((v) => v.priceCents / 100);
 
@@ -122,6 +132,25 @@ export default async function ProductPage({ params }: { params: Params }) {
           />
         </details>
       )}
+      {related.length > 0 && (
+        <section className="space-y-4 lg:col-span-2" aria-label="You might also like">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-[family-name:var(--font-display)] text-2xl font-bold">You might also like</h2>
+            {department && <Link href={department.href} className="text-sm font-semibold underline underline-offset-4">More in {department.name}</Link>}
+          </div>
+          <ProductGrid products={related} label="Related products" />
+        </section>
+      )}
+      <nav aria-label="Gift guides" className="space-y-3 lg:col-span-2">
+        <h2 className="font-[family-name:var(--font-display)] text-xl font-bold">Shop gift guides</h2>
+        <div className="flex flex-wrap gap-2">
+          {COLLECTIONS.map((c) => (
+            <Link key={c.slug} href={`/gifts/${c.slug}`} className="rounded-full border border-[var(--color-line,rgba(0,0,0,.12))] bg-white px-4 py-2 text-sm font-semibold hover:border-[var(--color-accent)]">
+              {c.emoji} {c.name}
+            </Link>
+          ))}
+        </div>
+      </nav>
     </article>
   );
 }
