@@ -53,6 +53,8 @@ export const COLLECTIONS: Record<string, { name: string; where: string }> = {
     name: "Gifts for pet lovers",
     where: `p.category_id = 2 AND NOT ${like(["diaper", "nappies", "poop", "seat belt", "seatbelt", "leash clip", "suture", "replacement", "replacing"])} AND ${NOT_GIFTY}`,
   },
+  // CJdropshipping Australian-warehouse stock: still arrives before Christmas after the AliExpress cut-off.
+  "last-minute-gifts": { name: "Last-minute gifts, fast AU delivery", where: "p.aliexpress_product_id LIKE 'CJ-%'" },
   "winter-warmers": {
     name: "Cosy winter gifts",
     where: `${like(["beanie", "winter", "scarf", "blanket", "fleece", "fur lined", "faux fur", "balaclava", "sleeping bag", "pashmina", "cashmere", "cosy", "cozy", "knit"])}

@@ -1,4 +1,5 @@
 import { cj } from "./cj/client";
+import { ingestCjProduct } from "./cj/ingest";
 import { callBusiness, optionalCallsAllowed } from "./aliexpress/client";
 import { queueSoldOutRetries, replaceSoldOut } from "./ingest/replace";
 import type { Env } from "./env";
@@ -15,7 +16,7 @@ export type Job =
   | { type: "replace-product"; productId: number }
   | { type: "daily-report" }
   | { type: "debug-call"; method: string; params: Record<string, string | number> }
-  | { type: "cj-call"; path: string; query?: Record<string, string> }
+  | { type: "cj-call"; path: string; query?: Record<string, string>; key?: string }
   | { type: "fulfil-order"; orderId: string }
   | { type: "track-fulfilment"; fulfilmentId: number }
   | { type: "vet-candidate"; aeProductId: string }
@@ -36,6 +37,7 @@ export async function handleQueue(batch: MessageBatch<Job>, env: Env): Promise<v
       if ((job.type === "vet-candidate" || job.type === "run-discovery" || job.type === "search-discovery") && !(await optionalCallsAllowed(env))) {
         console.log("skipped (AliExpress daily budget or back-off)", job.type); // vet-candidate stays 'new' and is retried by the drip
       }
+      else if (job.type === "ingest-product" && job.aeProductId.startsWith("CJ-")) await ingestCjProduct(env, job.aeProductId); // CJ Australian warehouse
       else if (job.type === "ingest-product") {
         await ingestProduct(env, await getToken(), job.aeProductId);
         // Sold out at the supplier: hide it and find a similar product (src/ingest/replace.ts).
@@ -52,7 +54,7 @@ export async function handleQueue(batch: MessageBatch<Job>, env: Env): Promise<v
       else if (job.type === "cj-call") {
         // Diagnostics only (queued by hand): store a read-only CJ reply in KV for 1 hour.
         const r = await cj(env, job.path, { query: job.query }).catch((e) => ({ error: String(e) }));
-        await env.KV.put("cj_debug", JSON.stringify(r).slice(0, 60000), { expirationTtl: 3600 });
+        await env.KV.put(job.key ?? "cj_debug", JSON.stringify(r).slice(0, 900000), { expirationTtl: 3600 });
       }
       else if (job.type === "fulfil-order") await fulfilOrder(env, await getToken(), job.orderId);
       else if (job.type === "track-fulfilment") await trackFulfilment(env, await getToken(), job.fulfilmentId);
@@ -93,6 +95,11 @@ async function fulfilOrder(env: Env, token: string, orderId: string) {
 
   const { results: items } = await env.DB.prepare(`SELECT ae_product_id, ae_sku_attr, quantity FROM order_items WHERE order_id = ?`)
     .bind(orderId).all<{ ae_product_id: string; ae_sku_attr: string; quantity: number }>();
+  // CJdropshipping items (key "CJ-...") are placed by hand on cjdropshipping.com: never send them to AliExpress.
+  if (items.some((i) => i.ae_product_id.startsWith("CJ-"))) {
+    await alertOwner(env, `Order ${order.order_number}: place it on CJdropshipping`, `This paid order includes fast-delivery items from CJdropshipping's Australian warehouse.\n\nOpen the master dashboard, use the "Open on CJ" links, and place the order on cjdropshipping.com with the customer's address, then click "Mark as ordered":\nhttps://rizzova-edge.rizzdigital.workers.dev/console/dashboard\n`);
+    return;
+  }
   const addr = JSON.parse(order.shipping_address_json ?? "{}");
   if (!addr.line1 || !addr.country) throw new Error("Order has no shipping address");
 

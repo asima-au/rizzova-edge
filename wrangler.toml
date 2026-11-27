@@ -16,6 +16,8 @@ AE_GATEWAY = "https://api-sg.aliexpress.com"
 AE_SHIP_TO_COUNTRY = "AU"
 STORE_CURRENCY = "AUD"
 STORE_LANGUAGE = "en"
+CJ_USD_AUD = "1.55"            # CJdropshipping prices are USD
+CJ_PRICE_MARKUP = "1.6"        # CJ AU-warehouse retail = cost x this
 PRICE_MARKUP = "2.2"            # retail = AliExpress cost x markup, rounded to .99
 COMPARE_AT_MARKUP = "1.3"       # compare-at = retail x this (0 disables)
 PUBLIC_SITE_URL = "https://rizzova.com"

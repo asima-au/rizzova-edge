@@ -109,7 +109,11 @@ export default async function ProductPage({ params }: { params: Params }) {
               </span>
             </p>
           )}
-          {product.shipCountries && product.shipCountries.length > 0 && product.shipCountries.length < 3 && (
+          {product.fastAu ? (
+            <p className="mt-3 inline-block rounded-[var(--radius-chip)] bg-[#c9a14a] px-3 py-1 text-sm font-bold text-[#241534]">
+              ⚡ Fast delivery from our Australian warehouse: 2–7 business days (Australia only)
+            </p>
+          ) : product.shipCountries && product.shipCountries.length > 0 && product.shipCountries.length < 3 && (
             <p className="mt-3 inline-block rounded-[var(--radius-chip)] bg-[var(--color-olive)] px-3 py-1 text-sm font-semibold text-[#f7f2e8]">
               Ships to {product.shipCountries.map((c) => ({ AU: "Australia", US: "the United States", AE: "the UAE" })[c] ?? c).join(" and ")} only
             </p>

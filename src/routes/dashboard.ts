@@ -85,7 +85,7 @@ dashboard.get("/", async (c) => {
   const toFulfilHtml = lines.length
     ? `<table><thead><tr><th>Order</th><th>Product</th><th>Option</th><th>Qty</th><th>Supplier cost</th><th></th></tr></thead><tbody>${lines.map((l) => `<tr>
 <td>${esc(l.order_number)}</td><td>${esc(l.title.slice(0, 70))}</td><td><small>${esc(l.ae_sku_attr)}</small></td><td>${l.quantity}</td><td>${money(l.unit_cost_cents * l.quantity)}</td>
-<td><a href="https://www.aliexpress.com/item/${esc(l.ae_product_id)}.html" target="_blank" rel="noopener">Open on AliExpress</a></td></tr>`).join("")}</tbody></table>
+<td>${l.ae_product_id.startsWith("CJ-") ? `<a href="https://cjdropshipping.com/product/p-${esc(l.ae_product_id.slice(3))}.html" target="_blank" rel="noopener">Open on CJ</a> <small>(SKU ${esc(l.ae_sku_attr)})</small>` : `<a href="https://www.aliexpress.com/item/${esc(l.ae_product_id)}.html" target="_blank" rel="noopener">Open on AliExpress</a>`}</td></tr>`).join("")}</tbody></table>
 <form method="post" action="/console/dashboard/placed" class="inline"><label>Order number <input name="order" placeholder="RZ-240005" required></label>
 <label>AliExpress order ID <input name="ae" placeholder="8123456789012345" required></label><button type="submit">Mark as ordered</button></form>
 <p class="note">After you place the order on AliExpress, enter its order ID here. The store then checks tracking every night and marks the order shipped and delivered.</p>`

@@ -6,6 +6,12 @@ export interface GiftCollection { slug: string; name: string; emoji: string; blu
 
 export const COLLECTIONS: GiftCollection[] = [
   {
+    slug: "last-minute-gifts", name: "Last-minute gifts (fast AU delivery)", emoji: "⚡",
+    blurb: "Shipped from our Australian warehouse in 2–7 business days, so they still arrive before Christmas.",
+    seoTitle: "Last-Minute Christmas Gifts, Fast Delivery Australia | Rizzova",
+    seoDescription: "Last-minute Christmas gifts shipped from an Australian warehouse in 2–7 business days: karaoke machine, massagers, craft kits, dog-lover jewellery and more.",
+  },
+  {
     slug: "secret-santa-under-25", name: "Secret Santa under A$25", emoji: "🎁",
     blurb: "Crowd-pleasing gifts that stay inside the Secret Santa budget, with free tracked delivery.",
     seoTitle: "Secret Santa Gifts Under $25 | Free Delivery Australia",

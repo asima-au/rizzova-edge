@@ -25,6 +25,7 @@ export interface Product {
   /** AliExpress buyers' average rating and units sold (supplier figures, not Rizzova reviews). */
   supplierRating?: number | null;
   supplierOrders?: number | null;
+  fastAu?: boolean;
   currency: string;
   category: string;
   categoryId?: number | null;
