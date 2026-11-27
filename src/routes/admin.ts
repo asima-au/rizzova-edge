@@ -1,3 +1,4 @@
+import { cj, CjError } from "../cj/client";
 import { Hono, type MiddlewareHandler } from "hono";
 import { getCookie } from "hono/cookie";
 import type { Env } from "../env";
@@ -172,4 +173,16 @@ admin.get("/stripe/status", async (c) => {
     secretKey: key ? (key.startsWith("sk_live_") || key.startsWith("rk_live_") ? "live" : "test") : "missing",
     webhookSecret: c.env.STRIPE_WEBHOOK_SECRET ? "worker secret" : (await c.env.KV.get("stripe:webhook_secret")) ? "saved by setup" : "missing",
   });
+});
+
+/** CJdropshipping connection test: logs in with the CJ_API_KEY secret and lists a few AU-warehouse products. */
+admin.get("/cj/health", async (c) => {
+  try {
+    const data = await cj<{ list?: { pid: string; productNameEn: string; sellPrice: string }[]; total?: number }>(c.env, "/product/list", {
+      query: { pageNum: "1", pageSize: "5", countryCode: "AU" },
+    });
+    return c.json({ ok: true, auWarehouseProducts: data.total ?? null, sample: (data.list ?? []).map((p) => ({ pid: p.pid, name: p.productNameEn, price: p.sellPrice })) });
+  } catch (e) {
+    return c.json({ ok: false, error: e instanceof CjError ? e.message : String(e) }, 502);
+  }
 });

@@ -1,3 +1,4 @@
+import { cj } from "./cj/client";
 import { callBusiness, optionalCallsAllowed } from "./aliexpress/client";
 import { queueSoldOutRetries, replaceSoldOut } from "./ingest/replace";
 import type { Env } from "./env";
@@ -14,6 +15,7 @@ export type Job =
   | { type: "replace-product"; productId: number }
   | { type: "daily-report" }
   | { type: "debug-call"; method: string; params: Record<string, string | number> }
+  | { type: "cj-call"; path: string; query?: Record<string, string> }
   | { type: "fulfil-order"; orderId: string }
   | { type: "track-fulfilment"; fulfilmentId: number }
   | { type: "vet-candidate"; aeProductId: string }
@@ -46,6 +48,11 @@ export async function handleQueue(batch: MessageBatch<Job>, env: Env): Promise<v
         // Diagnostics only (queued by hand): log a read-only AliExpress call's reply.
         const r = await callBusiness(env, job.method, await getToken(), job.params).catch((e) => ({ error: String(e) }));
         console.log("debug-call", job.method, JSON.stringify(r).slice(0, 30000));
+      }
+      else if (job.type === "cj-call") {
+        // Diagnostics only (queued by hand): store a read-only CJ reply in KV for 1 hour.
+        const r = await cj(env, job.path, { query: job.query }).catch((e) => ({ error: String(e) }));
+        await env.KV.put("cj_debug", JSON.stringify(r).slice(0, 60000), { expirationTtl: 3600 });
       }
       else if (job.type === "fulfil-order") await fulfilOrder(env, await getToken(), job.orderId);
       else if (job.type === "track-fulfilment") await trackFulfilment(env, await getToken(), job.fulfilmentId);

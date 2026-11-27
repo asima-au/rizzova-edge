@@ -32,6 +32,7 @@ export interface Env {
 
   // Secrets
   AE_APP_KEY: string;
+  CJ_API_KEY?: string;
   AE_APP_SECRET: string;
   STRIPE_SECRET_KEY: string;
   STRIPE_WEBHOOK_SECRET: string;
