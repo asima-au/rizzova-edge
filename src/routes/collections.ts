@@ -60,6 +60,40 @@ export const COLLECTIONS: Record<string, { name: string; where: string }> = {
   },
 };
 
+/**
+ * Gift Finder quiz: GET /api/collections/finder?who=her&budget=25&vibe=cosy -> { slugs }.
+ * Only fixed rule fragments reach the SQL; unknown answers are ignored.
+ */
+const WHO: Record<string, string> = {
+  her: `(p.category_id IN (5, 6) OR ${like(["women", "her ", "scarf", "necklace", "earring", "scrunch", "claw clip", "bouquet", "jewelry", "satin", "silk", "nail", "lip"])}) AND NOT ${like(["men''s", "for men", "baby"])}`,
+  him: `${like(["men''s", "mens ", " men ", "watch", "wallet", "sunglasses", "earbuds", "tripod", "diecast", "building block", "dice", "card game", "coffee", "socks", "beanie", "fidget slider"])} AND NOT ${like(["women", "girl", "baby", "lady"])}`,
+  kids: `p.category_id = 3 AND NOT ${like(["newborn", "baby "])}`,
+  baby: like(["baby", "newborn", "toddler", "montessori", "rattle"]),
+  teen: like(["kawaii", "plush", "squish", "fidget", "claw clip", "sunset lamp", "night light", "anime", "keychain", "nail", "hello kitty", "pokemon"]),
+  pet: "p.category_id = 2",
+};
+const VIBE: Record<string, string> = {
+  cosy: like(["blanket", "beanie", "scarf", "slipper", "warm", "plush", "cushion", "pillow", "fleece", "night light", "lamp"]),
+  funny: like(["funny", "goose", "tortilla", "screaming", "duck", "squish", "fidget", "prank", "cheese", "capybara", "ugly"]),
+  cute: like(["cute", "kawaii", "plush", "cat ", "bunny", "bear", "capybara", "keychain", "hello kitty"]),
+  practical: like(["organiser", "organizer", "bag", "bottle", "wallet", "holder", "brush", "kit", "set", "travel", "socks"]),
+  tech: like(["bluetooth", "usb", " led ", "led light", "rechargeable", "wireless", "earbuds", "tripod", "projector", "lamp", "light"]),
+  pretty: like(["necklace", "earring", "silk", "satin", "pearl", "gold", "jewelry", "scarf", "bouquet", "crystal"]),
+};
+collections.get("/finder", async (c) => {
+  const who = WHO[c.req.query("who") ?? ""];
+  const vibe = VIBE[c.req.query("vibe") ?? ""];
+  const max = Math.min(Math.max((Number(c.req.query("budget")) || 80) * 100, 1000), 8000); // budget in A$
+  const parts = [`p.min_price_cents <= ${max}`, NOT_GIFTY];
+  if (who) parts.push(`(${who})`);
+  const base = `SELECT p.slug FROM products p WHERE p.status = 'active' AND p.total_stock > 0 AND p.feature_image_id IS NOT NULL AND `;
+  const order = ` ORDER BY COALESCE(p.supplier_orders, 0) DESC, p.created_at DESC LIMIT 12`;
+  // Best match uses every answer; if the vibe leaves too few, fall back to who + budget.
+  let { results } = await c.env.DB.prepare(base + [...parts, ...(vibe ? [`(${vibe})`] : [])].join(" AND ") + order).all<{ slug: string }>();
+  if (results.length < 4) results = (await c.env.DB.prepare(base + parts.join(" AND ") + order).all<{ slug: string }>()).results;
+  return c.json({ slugs: results.map((r) => r.slug) }, 200, { "cache-control": "public, max-age=300" });
+});
+
 collections.get("/:slug", async (c) => {
   const col = COLLECTIONS[c.req.param("slug")];
   if (!col) return c.json({ error: "Not found" }, 404);

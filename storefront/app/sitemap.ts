@@ -13,6 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const slugs = await allProductSlugs();
   return [
     { url: SITE_URL, changeFrequency: "daily", priority: 1 },
+    { url: `${SITE_URL}/gift-finder`, changeFrequency: "weekly", priority: 0.9 },
     { url: `${SITE_URL}/journal`, changeFrequency: "weekly", priority: 0.7 },
     ...JOURNAL.map((p) => ({ url: `${SITE_URL}/journal/${p.slug}`, lastModified: p.updated, changeFrequency: "monthly" as const, priority: 0.8 })),
     ...COLLECTIONS.map((c) => ({ url: `${SITE_URL}/gifts/${c.slug}`, changeFrequency: "daily" as const, priority: 0.9 })),

@@ -74,6 +74,16 @@ export async function getCollectionProducts(slug: string): Promise<Product[]> {
   return items.filter((p): p is Product => p !== null);
 }
 
+/** Gift Finder quiz results (answers are fixed choices; the backend ignores anything else). */
+export async function getFinderProducts(answers: { who?: string; budget?: string; vibe?: string }): Promise<Product[]> {
+  if (!API) return [];
+  const qs = new URLSearchParams(Object.entries(answers).filter(([, v]) => v) as [string, string][]);
+  const res = await api<{ slugs: string[] }>(`/api/collections/finder?${qs.toString()}`);
+  if (!res) return [];
+  const items = await Promise.all(res.slugs.map((s) => getProduct(s)));
+  return items.filter((p): p is Product => p !== null);
+}
+
 /** New address for a sold-out product that was replaced, if any. */
 export async function movedSlug(slug: string): Promise<string | null> {
   if (!API) return null;
